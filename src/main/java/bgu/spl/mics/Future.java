@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class Future<T> {
 
 	private T result;
-	private boolean status;
+	private boolean status; // Boolean flag that says if problem "resolved"
 	private final Object lock = new Object();
 
 	/**
@@ -33,12 +33,13 @@ public class Future<T> {
      *
 	 */
 	public T get() {
-		synchronized (lock) {
-			while (status == false) {
+		synchronized (lock) { // JVM attaches to each object at runtime it own monitor which has two states: possession or availaible
+			while (!status) { // waits until the futere object is resolved and eventually returns the result
 				try {
-					lock.wait();
+					lock.wait(); // waits for resolve() calls to notifyAll()
 				} catch (InterruptedException e) {
-					return null;
+					Thread.currentThread().interrupt();
+					return null; //?
 				}
 			}
 			return result;
@@ -78,11 +79,18 @@ public class Future<T> {
      */
 	public T get(long timeout, TimeUnit unit) {
 		synchronized (lock) {
-			if (status == false) {
+			if (!status) { // waits until: Future is resolved OR specified timout duration past
 				try {
-					lock.wait(unit.toMillis(timeout));
+					long endTime = System.currentTimeMillis() + unit.toMillis(timeout); // calculates the absolute "timestamp" of when the waiting period should end.
+					long timeLeft = unit.toMillis(timeout); // How much time left to wait' initially to full timeout duration
+					while (!status && timeLeft > 0) {
+						lock.wait(timeLeft);
+						timeLeft = endTime - System.currentTimeMillis();
+					}
 				} catch (InterruptedException e) {
-					return null;
+					// Ensures that the thread itself (or other parts of the program), can detect and respond to interruption.
+					Thread.currentThread().interrupt();
+					return null; // not sure if needed, But whats id does: in case of timeout expires and the Future is not resolved,
 				}
 			}
 			return result;
