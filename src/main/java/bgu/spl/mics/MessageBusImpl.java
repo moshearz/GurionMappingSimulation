@@ -12,8 +12,14 @@ import java.util.concurrent.*;
  */
 public class MessageBusImpl implements MessageBus {
 
-	// Mapping from message types (Event or Broadcast) to their subscribed MicroServices
-	private final Map<Class<? extends Message>, List<MicroService>> subscriptions;
+	// Separate maps for Event and Broadcast subscriptions
+	//map for Event. f we use round-robin indices to implement round-robin behavior, the eventSubscriptions field must be a List and not a Queue.
+	//Because A List allows direct access to elements using their index and this is necessary for implementing round-robin via an external field like roundRobinIndices
+	// (A Queue operates on a FIFO (First-In-First-Out) principle.)
+	private final Map<Class<? extends Event>, List<MicroService>> eventSubscriptions;
+
+	//map for Broadcast
+	private final Map<Class<? extends Broadcast>, List<MicroService>> broadcastSubscriptions;
 
 	// Mapping from each MicroService to its own message queue
 	private final Map<MicroService, BlockingQueue<Message>> queues;
@@ -31,7 +37,8 @@ public class MessageBusImpl implements MessageBus {
 
 
 	private MessageBusImpl() {
-		subscriptions = new ConcurrentHashMap<>(); // Thread-safe mapping for subscriptions
+		eventSubscriptions = new ConcurrentHashMap<>(); // Thread-safe mapping for Event subscriptions
+		broadcastSubscriptions = new ConcurrentHashMap<>(); // Thread-safe mapping for Broadcast subscriptions
 		queues = new ConcurrentHashMap<>();        // Thread-safe mapping for MicroService queues
 		eventFutures = new ConcurrentHashMap<>();  // Thread-safe mapping for event Futures
 		roundRobinIndices = new ConcurrentHashMap<>(); // Thread-safe mapping for round-robin indices
@@ -57,10 +64,10 @@ public class MessageBusImpl implements MessageBus {
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
 		// Registers a Microservice to handle specific type of : EVENT
 		// event is ine-to-one message (it is sent to one specifiec microservice)
-		synchronized (subscriptions) {
-			subscriptions.putIfAbsent(type, new ArrayList<>()); // This way we ensure the list exist for this EVENT type
+		synchronized (eventSubscriptions) {
+			eventSubscriptions.putIfAbsent(type, new ArrayList<>()); // This way we ensure the QUEUE exist for this EVENT type
 			//The putIfAbsent() method writes an entry into the map. If an entry with the same key already exists and its value is not null then the map is not changed.
-			subscriptions.get(type).add(m); // Register the microservice to the subscription list
+			eventSubscriptions.get(type).add(m); // Register the microservice to the subscription list
 		}
 	}
 
@@ -68,9 +75,9 @@ public class MessageBusImpl implements MessageBus {
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		// Registers a Microservice to handle specific type of : BROADCAST
 		// broadcast is ine-to-many message ( it is sent to all subscribed microservices without expecting a specific response
-		synchronized (subscriptions) {
-			subscriptions.putIfAbsent(type, new ArrayList<>()); //This way we ensure the list exist for this BROADCAST type
-			subscriptions.get(type).add(m); // Register the microservice to the subscriptions list
+		synchronized (broadcastSubscriptions) {
+			broadcastSubscriptions.putIfAbsent(type, new ArrayList<>()); //This way we ensure the LIST exist for this BROADCAST type
+			broadcastSubscriptions.get(type).add(m); // Register the microservice to the subscriptions list
 		}
 	}
 
@@ -84,11 +91,11 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void sendBroadcast(Broadcast b) {
 		// Sends a BROADCAST msg to: ALL MicroService (instances subscribed to its type)
-		synchronized (subscriptions) {
+		synchronized (broadcastSubscriptions) {
 			//The getOrDefault() method returns the value of the entry in the map which has a specified key. If the entry does not exist then the value of the second parameter is returned.
-			List<MicroService> subscribesr = subscriptions.getOrDefault(b.getClass(), new ArrayList<>()); // also ensures that if no subsribers exist for the broadcast type, empty list is returned
+			List<MicroService> subscribers = broadcastSubscriptions.getOrDefault(b.getClass(), Collections.emptyList()); // also ensures that if no subsribers exist for the broadcast type, empty list is returned
 			//Notify : because it is a broadcast it is not expecting a response
-			for (MicroService m : subscribesr) {
+			for (MicroService m : subscribers) {
 				BlockingQueue<Message> queue = queues.get(m);
 				if (queue != null) {
 					queue.offer(b); // Add the Broadcast to the MicroService's queue
@@ -103,14 +110,14 @@ public class MessageBusImpl implements MessageBus {
 	public <T> Future<T> sendEvent(Event<T> e) {
 		// Sends a EVENT msg to: ALL MicroService (instances subscribed to its type)
 		// round-robin strategy
-		synchronized (subscriptions) {
-			List<MicroService> subscribers = subscriptions.getOrDefault(e.getClass(), Collections.emptyList());
-			if (subscribers.isEmpty())
+		synchronized (eventSubscriptions) {
+			List<MicroService> subscribers = eventSubscriptions.get(e.getClass());
+			if (subscribers == null || subscribers.isEmpty())
 				return null; // No MicroServices are subscribed to this Event type
 
 			// Get the round-robin index for this Event type
 			int index = roundRobinIndices.getOrDefault(e.getClass(), 0);
-			MicroService target = subscribers.get(index); // Select the MicroService
+			MicroService target = subscribers.get(index); // Select the MicroService in the current index
 
 			// Update the round-robin index for the next Event
 			roundRobinIndices.put(e.getClass(), (index + 1) % subscribers.size());
@@ -119,7 +126,7 @@ public class MessageBusImpl implements MessageBus {
 			// Add the Event to the target's queue
 			BlockingQueue<Message> queue = queues.get(target);
 			if (queue != null) {
-				queue.offer(e);
+				queue.offer(e); // Assign the Event to the MicroService's message queue
 			}
 
 			// Create and store the Future associated with this Event
@@ -145,10 +152,12 @@ public class MessageBusImpl implements MessageBus {
 		BlockingQueue<Message> queue = queues.remove(m);
 		if(queue != null) { queue.clear(); } // clear all messages in the queue
 
-		synchronized (subscriptions){ for( List<MicroService> subscribers : subscriptions.values()) subscribers.remove(m);}
+		synchronized (eventSubscriptions){ for( List<MicroService> subscribers : eventSubscriptions.values()) subscribers.remove(m);}
+
+		synchronized (broadcastSubscriptions){ for( List<MicroService> subscribers : broadcastSubscriptions.values()) subscribers.remove(m);}
 
 		//Only if necessary, removed associated futers
-		//entrySet() returns a set view of the key-value pairs in the eventFuteres map
+		//entrySet() returns a set view of the key-value pairs in the eventFuteres map. then "removeIf(...)" iterates over the entries in the Set and removes any entry where the provided condition in the lambda
 		eventFutures.entrySet().removeIf(entry -> entry.getValue().equals(m));
 
 	}
