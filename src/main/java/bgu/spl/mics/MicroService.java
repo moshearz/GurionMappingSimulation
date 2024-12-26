@@ -1,5 +1,9 @@
 package bgu.spl.mics;
 
+import java.util.HashMap;
+
+import java.util.Map;
+
 /**
  * The MicroService is an abstract class that any micro-service in the system
  * must extend. The abstract MicroService class is responsible to get and
@@ -20,8 +24,13 @@ package bgu.spl.mics;
  */
 public abstract class MicroService implements Runnable {
 
-    private boolean terminated = false;
-    private final String name;
+    private boolean terminated = false; // indicates whether the MicroService should stop running its event loop.
+    private final String name; // name of the MS
+
+    private final Map<Class<? extends Message>, Callback<?>> callbacks; // A mapping of message types (Event or Broadcast) to their corresponding Callback functions.
+    private final MessageBus messageBus; // Reference to the MessageBus singleton ( a special class that allows only one instance (or object) of itself to be created)
+    // A reference to the singleton MessageBus (specifically, MessageBusImpl) used to communicate with other MicroServices
+
 
     /**
      * @param name the micro-service name (used mainly for debugging purposes -
@@ -29,6 +38,8 @@ public abstract class MicroService implements Runnable {
      */
     public MicroService(String name) {
         this.name = name;
+        this.callbacks = new HashMap<>();
+        this.messageBus = MessageBusImpl.getInstance();
     }
 
     /**
@@ -53,7 +64,8 @@ public abstract class MicroService implements Runnable {
      *                 queue.
      */
     protected final <T, E extends Event<T>> void subscribeEvent(Class<E> type, Callback<E> callback) {
-        //TODO: implement this.
+        messageBus.subscribeEvent(type, this);
+        callbacks.put(type, callback);
     }
 
     /**
@@ -77,7 +89,8 @@ public abstract class MicroService implements Runnable {
      *                 queue.
      */
     protected final <B extends Broadcast> void subscribeBroadcast(Class<B> type, Callback<B> callback) {
-        //TODO: implement this.
+        messageBus.subscribeBroadcast(type, this);
+        callbacks.put(type, callback);
     }
 
     /**
@@ -92,10 +105,7 @@ public abstract class MicroService implements Runnable {
      *         			micro-service processing this event.
      * 	       			null in case no micro-service has subscribed to {@code e.getClass()}.
      */
-    protected final <T> Future<T> sendEvent(Event<T> e) {
-        //TODO: implement this.
-        return null; //TODO: delete this line :)
-    }
+    protected final <T> Future<T> sendEvent(Event<T> e) { return messageBus.sendEvent(e);}
 
     /**
      * A Micro-Service calls this method in order to send the broadcast message {@code b} using the message-bus
@@ -103,9 +113,7 @@ public abstract class MicroService implements Runnable {
      * <p>
      * @param b The broadcast message to send
      */
-    protected final void sendBroadcast(Broadcast b) {
-        //TODO: implement this.
-    }
+    protected final void sendBroadcast(Broadcast b) {messageBus.sendBroadcast(b);}
 
     /**
      * Completes the received request {@code e} with the result {@code result}
@@ -118,7 +126,7 @@ public abstract class MicroService implements Runnable {
      *               {@code e}.
      */
     protected final <T> void complete(Event<T> e, T result) {
-        //TODO: implement this.
+        messageBus.complete(e, result); // Resolve the events future with the given result
     }
 
     /**
@@ -148,10 +156,22 @@ public abstract class MicroService implements Runnable {
      */
     @Override
     public final void run() {
+        messageBus.register(this); //"Registration and Unregistration: Must occur inside the run method of the MicroService."
         initialize();
         while (!terminated) {
-            System.out.println("NOT IMPLEMENTED!!!"); //TODO: you should delete this line :)
+            try {
+                Message msg = messageBus.awaitMessage(this); // Wait for the next message and retrieve the next message
+                //Find and Execute the callback
+                Callback<Message> callback = (Callback<Message>) callbacks.get(msg.getClass());
+                if (callback != null)
+                    callback.call(msg);
+                else
+                    System.err.println("No callback found for message type: " + msg.getClass().getName());
+            }catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
+        messageBus.unregister(this); // Unregister the MicroService from the MessageBus before exiting
     }
 
 }
