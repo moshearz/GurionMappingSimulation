@@ -166,7 +166,7 @@ public class MessageBusImpl implements MessageBus {
 	public Message awaitMessage(MicroService m) throws InterruptedException {
 		// Blocks until a msg is availaible for the microservice and then return the msg
 		BlockingQueue<Message> queue = queues.get(m);
-		if (queue == null) { throw new IllegalArgumentException("Microservice is not registerd")}
+		if (queue == null) { throw new IllegalArgumentException("Microservice is not registerd");}
 		return queue.take(); // retrieve and remove the head of this queue
 	}
 
