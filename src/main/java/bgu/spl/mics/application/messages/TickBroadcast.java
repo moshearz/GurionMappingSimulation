@@ -2,10 +2,15 @@ package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Broadcast;
 
+/**
+ * broadcast message sent by the TimeService to notify other services about the current simulation tick.
+ * Sent by: TimeService  other services for timing purposes.
+ * Used for: Timing message publications and processing.
+ */
 public class TickBroadcast implements Broadcast {
-    private final String microServiceID;
+    private final int tick;
 
-    public TickBroadcast(String microServiceID) { this.microServiceID = microServiceID; }
+    public TickBroadcast(int tick) { this.tick = tick; }
 
-    public String getMicroServiceID() { return microServiceID; }
+    public int getTick() { return tick; }
 }

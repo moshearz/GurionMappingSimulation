@@ -13,7 +13,7 @@ public class TrackedObject {
     private final String id;
     private final int time;
     private final String description;
-    private final Array coordinates;
+    private final Array coordinates; //Maybe need to be changed to List<CloudPoint>
 
     public TrackedObject(String id, int time, String description, Array coordinates) {
         this.id = id;

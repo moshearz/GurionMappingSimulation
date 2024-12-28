@@ -1,5 +1,7 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.application.messages.TerminatedBroadcast;
+
 import java.util.HashMap;
 
 import java.util.Map;
@@ -171,6 +173,8 @@ public abstract class MicroService implements Runnable {
                 Thread.currentThread().interrupt();
             }
         }
+        // Send termination broadcast and unregister before exiting
+        sendBroadcast(new TerminatedBroadcast(getName()));
         messageBus.unregister(this); // Unregister the MicroService from the MessageBus before exiting
     }
 

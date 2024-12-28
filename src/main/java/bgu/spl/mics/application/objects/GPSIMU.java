@@ -7,9 +7,9 @@ import java.util.List;
  * Provides information about the robot's position and movement.
  */
 public class GPSIMU {
-    private int currentTick;
+    private int currentTick; // Current Time
     private STATUS status;
-    private final List<Pose> poseList;
+    private final List<Pose> poseList; // List of the robot's position with time stamps
 
     public GPSIMU(int currentTick, STATUS status, List<Pose> poseList) {
         this.currentTick = currentTick;

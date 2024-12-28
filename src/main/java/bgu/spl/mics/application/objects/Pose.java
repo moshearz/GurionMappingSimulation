@@ -7,8 +7,8 @@ package bgu.spl.mics.application.objects;
 public class Pose {
     private float x;
     private float y;
-    private float yaw;
-    private int time;
+    private float yaw; // The angle of the robot to the axis of the charging station
+    private int time; // the time the robot reaches to this position
 
     public Pose(float x, float y, float yaw, int time) {
         this.x = x;

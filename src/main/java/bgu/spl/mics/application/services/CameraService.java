@@ -2,7 +2,13 @@ package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
 
+import bgu.spl.mics.application.messages.DetectObjectsEvent;
+import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.Camera;
+import bgu.spl.mics.application.objects.DetectedObject;
+import bgu.spl.mics.application.objects.STATUS;
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
+import bgu.spl.mics.application.messages.TerminatedBroadcast;
 
 /**
  * CameraService is responsible for processing data from the camera and
@@ -12,16 +18,15 @@ import bgu.spl.mics.application.objects.Camera;
  * the system's StatisticalFolder upon sending its observations.
  */
 public class CameraService extends MicroService {
-
     private final Camera camera;
-
+    private int currentTick = 0;
     /**
      * Constructor for CameraService.
      *
      * @param camera The Camera object that this service will use to detect objects.
      */
     public CameraService(Camera camera) {
-        super("DetectedObjectsEvent");
+        super("Camera: " + camera.getId());
         this.camera = camera;
     }
 
@@ -32,6 +37,23 @@ public class CameraService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
+        subscribeBroadcast(TickBroadcast.class, tick ->{
+            currentTick = tick.getTick();
+            if (camera.getStatus() == STATUS.UP && currentTick % camera.getFrequency() == 0 && camera.hasDetectedObjects()) {
+                StampedDetectedObjects detectedObject = camera.getNextDetectedObject();
+                DetectObjectsEvent detectObjectsEvent = new DetectObjectsEvent(detectedObject);
+                sendEvent(detectObjectsEvent);
+            }
+        });
+
+        subscribeBroadcast(TickBroadcast.class, termination -> {
+            System.out.println(getName() + " received termination signal. Terminating.(I'll be back!)");
+            terminate();
+        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            sendBroadcast(new TerminatedBroadcast(getName()));
+        }));
+        System.out.println(getName() + " initialized.");
+
     }
 }
