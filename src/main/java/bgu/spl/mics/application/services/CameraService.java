@@ -37,6 +37,7 @@ public class CameraService extends MicroService {
      */
     @Override
     protected void initialize() {
+        // First type of msg - TickBroadcast: Tracks system ticks and determines when to perform object detection
         subscribeBroadcast(TickBroadcast.class, tick ->{
             currentTick = tick.getTick();
             if (camera.getStatus() == STATUS.UP && currentTick % camera.getFrequency() == 0 && camera.hasDetectedObjects()) {
@@ -45,12 +46,13 @@ public class CameraService extends MicroService {
                 sendEvent(detectObjectsEvent);
             }
         });
-
-        subscribeBroadcast(TickBroadcast.class, termination -> {
+        // Second type of msg - TerminatedBroadcast: Listens for termination signals from other services
+        subscribeBroadcast(TerminatedBroadcast.class, termination -> {
             System.out.println(getName() + " received termination signal. Terminating.(I'll be back!)");
-            terminate();
+            terminate(); // stop the service’s event loop
         });
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        //Ensures that the service sends a TerminatedBroadcast before it terminates.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> { // Adds a shutdown hook, which is a thread that runs when the JVM is shutting down.
             sendBroadcast(new TerminatedBroadcast(getName()));
         }));
         System.out.println(getName() + " initialized.");
