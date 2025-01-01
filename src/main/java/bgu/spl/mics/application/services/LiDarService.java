@@ -14,12 +14,8 @@ import bgu.spl.mics.application.objects.LiDarWorkerTracker;
  */
 public class LiDarService extends MicroService {
 
-    private final LiDarDataBase dataBase;
+    private final LiDarWorkerTracker workerTracker;
 
-    public LiDarService(String name, LiDarDataBase dataBase) {
-        super(name);
-        this.dataBase = dataBase;
-    }
     /**
      * Constructor for LiDarService.
      *
@@ -27,7 +23,7 @@ public class LiDarService extends MicroService {
      */
     public LiDarService(String name, LiDarDataBase dataBase) {
         super(name);
-        this.dataBase = dataBase;
+        this.workerTracker = workerTracker;
     }
 
     /**

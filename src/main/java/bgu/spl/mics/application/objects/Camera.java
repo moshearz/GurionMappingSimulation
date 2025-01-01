@@ -29,7 +29,7 @@ public class Camera {
 
     public void setStatus(STATUS status) { this.status = status; }
 
-    public List<StampedDetectedObjects> getDetectedObjectsList() { return new ArrayList<>(detectedObjectsList); } // A copy of the list of detected objects
+    public List<StampedDetectedObjects> getDetectedObjectsList() { return new ArrayList<>(detectedObjectsList); } // A copy of the list of detected objects. "Snapshot" as we learned in class.
 
     public void addDetectedObject(StampedDetectedObjects detectedObject) {
         this.detectedObjectsList.add(detectedObject);
