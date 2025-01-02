@@ -22,6 +22,7 @@ public class StampedCloudPoints {
     public int getTime() { return time; }
 
     public List<List<Double>> getCloudPoints() { return cloudPoints; }
+    // mY
 
     public void setCloudPoints(List<List<Double>> cloudPoints) { this.cloudPoints = cloudPoints; }
 }

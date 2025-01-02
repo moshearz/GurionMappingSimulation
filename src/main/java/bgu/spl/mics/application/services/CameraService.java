@@ -20,6 +20,7 @@ import bgu.spl.mics.application.messages.TerminatedBroadcast;
 public class CameraService extends MicroService {
     private final Camera camera;
     private int currentTick = 0;
+    private int lastDetectionTick = 0;
     /**
      * Constructor for CameraService.
      *
@@ -40,10 +41,17 @@ public class CameraService extends MicroService {
         // First type of msg - TickBroadcast: Tracks system ticks and determines when to perform object detection
         subscribeBroadcast(TickBroadcast.class, tick ->{
             currentTick = tick.getTick();
-            if (camera.getStatus() == STATUS.UP && currentTick % camera.getFrequency() == 0 && camera.hasDetectedObjects()) {
-                StampedDetectedObjects detectedObject = camera.getNextDetectedObject();
-                DetectObjectsEvent detectObjectsEvent = new DetectObjectsEvent(detectedObject);
-                sendEvent(detectObjectsEvent);
+            // Check if the camera is operational and has detected objects
+            if (camera.getStatus() == STATUS.UP && camera.hasDetectedObjects()) {
+                // Ensure enough time has passed since the last detection
+                if (currentTick >= lastDetectionTick + camera.getFrequency()) { // ensures the camera waits the full frequency interval (F ticks) (before producing new data).
+                    StampedDetectedObjects detectedObject = camera.getNextDetectedObject();
+                    DetectObjectsEvent detectObjectsEvent = new DetectObjectsEvent(detectedObject);
+                    sendEvent(detectObjectsEvent);
+
+                    // Update last detection time
+                    lastDetectionTick = currentTick;
+                }
             }
         });
         // Second type of msg - TerminatedBroadcast: Listens for termination signals from other services

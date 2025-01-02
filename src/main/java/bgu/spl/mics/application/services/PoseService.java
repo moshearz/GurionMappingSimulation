@@ -18,7 +18,7 @@ public class PoseService extends MicroService {
      * @param gpsimu The GPSIMU object that provides the robot's pose data.
      */
     public PoseService(GPSIMU gpsimu) {
-        super("PoseEvent");
+        super("PoseService");
         this.gpsimu = gpsimu;
     }
 
