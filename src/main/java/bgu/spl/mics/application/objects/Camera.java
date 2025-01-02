@@ -30,6 +30,7 @@ public class Camera {
     public void setStatus(STATUS status) { this.status = status; }
 
     public List<StampedDetectedObjects> getDetectedObjectsList() { return new ArrayList<>(detectedObjectsList); } // A copy of the list of detected objects. "Snapshot" as we learned in class.
+    // why does it need a copy of the list
 
     public void addDetectedObject(StampedDetectedObjects detectedObject) {
         this.detectedObjectsList.add(detectedObject);
@@ -45,6 +46,6 @@ public class Camera {
 
     public boolean hasDetectedObjects() { return !detectedObjectsList.isEmpty(); }
 
-    public void clearDetectedObjects() { detectedObjectsList.clear(); }
+    public void clearDetectedObjects() { detectedObjectsList.clear(); } // doesn't seem to have a use
 
 }
