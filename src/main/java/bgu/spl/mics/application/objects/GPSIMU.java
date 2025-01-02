@@ -15,16 +15,22 @@ public class GPSIMU {
         this.poseList = poseList;
     }
 
-    public final Pose getNextPose() {
-        try {
-            return poseList.get(currentTick++);
-        } catch (IndexOutOfBoundsException e) {
-            status = STATUS.DOWN;
+    public Pose getCurrentPose(int tick) {
+        for (Pose pose : poseList) {
+            if (pose.getTime() == tick) {
+                return pose;
+            }
         }
-        return null;
+        return null; // No pose found for the given tick
     }
 
-    public final STATUS getStatus() {
-        return status;
-    }
+    public int getCurrentTick() { return currentTick; }
+
+    public STATUS getStatus() { return status; }
+
+    public void setStatus(STATUS status) { this.status = status;}
+
+    public List<Pose> getPoseList() { return poseList; }
+
+
 }
