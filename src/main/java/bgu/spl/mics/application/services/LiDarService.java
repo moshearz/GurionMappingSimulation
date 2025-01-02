@@ -1,29 +1,44 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.DetectObjectsEvent;
 import bgu.spl.mics.application.objects.LiDarDataBase;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
+import bgu.spl.mics.application.objects.StampedCloudPoints;
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
+import bgu.spl.mics.application.messages.TrackedObjectsEvent;
+import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.messages.TerminatedBroadcast;
+
+
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
  * sending TrackedObjectsEvents to the FusionSLAM service.
- * 
+ *
  * This service interacts with the LiDarWorkerTracker object to retrieve and process
  * cloud point data and updates the system's StatisticalFolder upon sending its
  * observations.
  */
 public class LiDarService extends MicroService {
-
-    private final LiDarWorkerTracker workerTracker;
-
+    private final int id; // Unique LiDAR sensor ID
+    private final int frequency; // Frequency of operation
+    private final LiDarDataBase dataBase; // Reference to the LiDAR database
+    private int currentTick; // Tracks the current tick
     /**
      * Constructor for LiDarService.
      *
      * @param LiDarWorkerTracker A LiDAR Tracker worker object that this service will use to process data.
      */
-    public LiDarService(String name, LiDarDataBase dataBase) {
-        super(name);
-        this.workerTracker = workerTracker;
+    public LiDarService(int id ,int frequency, LiDarDataBase dataBase) {
+        super("LiDarService-" + id);
+        this.id = id;
+        this.frequency = frequency;
+        this.dataBase = dataBase;
+        this.currentTick = 0;
     }
 
     /**
@@ -33,6 +48,30 @@ public class LiDarService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
+        // Handle DetectObjectsEvent
+        subscribeEvent(DetectObjectsEvent.class, event -> {
+            String objectId = event.getObjectId();
+            int time = event.getTime();
+
+            // Fetch cloud points from the database
+            List<List<Double>> cloudPoints = dataBase.getCloudPoints(objectId, time);
+            if (cloudPoints != null) {
+                // Send TrackedObjectsEvent
+                sendEvent(new TrackedObjectsEvent(objectId, time, cloudPoints));
+            }
+        });
+
+        // Handle TickBroadcast
+        subscribeBroadcast(TickBroadcast.class, tick -> {
+            currentTick = tick.getTick();
+            if (currentTick % frequency == 0) {
+                System.out.println("LiDarService-" + id + " operating at tick " + currentTick);
+            }
+        });
+
+        // Handle TerminatedBroadcast
+        subscribeBroadcast(TerminatedBroadcast.class, terminated -> terminate());
+
+        System.out.println(getName() + " initialized.");
     }
 }

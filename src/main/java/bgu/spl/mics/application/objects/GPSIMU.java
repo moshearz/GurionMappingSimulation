@@ -16,4 +16,23 @@ public class GPSIMU {
         this.status = status;
         this.poseList = poseList;
     }
+
+    public Pose getCurrentPose(int tick) {
+        for (Pose pose : poseList) {
+            if (pose.getTime() == tick) {
+                return pose;
+            }
+        }
+        return null; // No pose found for the given tick
+    }
+
+    public int getCurrentTick() { return currentTick; }
+
+    public STATUS getStatus() { return status; }
+
+    public void setStatus(STATUS status) { this.status = status;}
+
+    public List<Pose> getPoseList() { return poseList; }
+
+
 }

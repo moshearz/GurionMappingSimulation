@@ -13,4 +13,8 @@ public class DetectedObject {
         this.description = description;
     }
 
+    public String getId() { return id; } //of the detected object
+
+    public String getDescription() { return description; } //again, of the detected object..
+
 }
