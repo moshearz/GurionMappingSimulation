@@ -45,6 +45,6 @@ public class Camera {
 
     public boolean hasDetectedObjects() { return !detectedObjectsList.isEmpty(); }
 
-    public void clearDetectedObjects() { detectedObjectsList.clear(); }
+    public void clearDetectedObjects() { detectedObjectsList.clear(); } // doesn't seem to have a use
 
 }

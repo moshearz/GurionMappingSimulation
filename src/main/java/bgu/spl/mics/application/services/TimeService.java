@@ -1,6 +1,5 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.Broadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.TickBroadcast;
 
@@ -37,7 +36,7 @@ public class TimeService extends MicroService {
     protected void initialize() {
         //long terminateTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime) * Duration;
         try {
-            while (System.currentTimeMillis() < terminateTime) {
+            while (currentTick < Duration) {
                 this.wait(TimeUnit.SECONDS.toMillis(TickTime));
                 sendBroadcast(new TickBroadcast(++currentTick));
             }
