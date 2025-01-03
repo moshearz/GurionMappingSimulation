@@ -30,14 +30,13 @@ public class Camera {
     public void setStatus(STATUS status) { this.status = status; }
 
     public List<StampedDetectedObjects> getDetectedObjectsList() { return new ArrayList<>(detectedObjectsList); } // A copy of the list of detected objects. "Snapshot" as we learned in class.
-    // why does it need a copy of the list
 
     public void addDetectedObject(StampedDetectedObjects detectedObject) {
         this.detectedObjectsList.add(detectedObject);
         System.out.println("Camera " + id + " added detected object: " + detectedObject); // for debugging
     }
 
-    public StampedDetectedObjects getNextDetectedObject() {
+    public StampedDetectedObjects getNextDetectedObjects() {
         if (!detectedObjectsList.isEmpty()) {
             return detectedObjectsList.remove(0); // Remove and return the first object
         }

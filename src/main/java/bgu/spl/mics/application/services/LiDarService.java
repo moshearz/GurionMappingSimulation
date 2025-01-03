@@ -50,28 +50,6 @@ public class LiDarService extends MicroService {
     protected void initialize() {
         // Handle DetectObjectsEvent
         subscribeEvent(DetectObjectsEvent.class, event -> {
-            String objectId = event.getObjectId();
-            int time = event.getTime();
 
-            // Fetch cloud points from the database
-            List<List<Double>> cloudPoints = dataBase.getCloudPoints(objectId, time);
-            if (cloudPoints != null) {
-                // Send TrackedObjectsEvent
-                sendEvent(new TrackedObjectsEvent(objectId, time, cloudPoints));
-            }
-        });
-
-        // Handle TickBroadcast
-        subscribeBroadcast(TickBroadcast.class, tick -> {
-            currentTick = tick.getTick();
-            if (currentTick % frequency == 0) {
-                System.out.println("LiDarService-" + id + " operating at tick " + currentTick);
-            }
-        });
-
-        // Handle TerminatedBroadcast
-        subscribeBroadcast(TerminatedBroadcast.class, terminated -> terminate());
-
-        System.out.println(getName() + " initialized.");
     }
 }
