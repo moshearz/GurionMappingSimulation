@@ -36,7 +36,7 @@ public class Camera {
         System.out.println("Camera " + id + " added detected object: " + detectedObject); // for debugging
     }
 
-    public StampedDetectedObjects getNextDetectedObject() {
+    public StampedDetectedObjects getNextDetectedObjects() {
         if (!detectedObjectsList.isEmpty()) {
             return detectedObjectsList.remove(0); // Remove and return the first object
         }

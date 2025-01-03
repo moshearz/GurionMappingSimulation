@@ -14,7 +14,7 @@ public class TimeService extends MicroService {
 
     private final int TickTime;
     private final int Duration;
-    private int currentTick = 0;
+    private int currentTick;
 
     /**
      * Constructor for TimeService.
@@ -23,9 +23,10 @@ public class TimeService extends MicroService {
      * @param Duration  The total number of ticks before the service terminates.
      */
     public TimeService(int TickTime, int Duration) {
-        super("TickBroadcast");
+        super("TimeService");
         this.TickTime = TickTime;
         this.Duration = Duration;
+        this.currentTick = 0;
     }
 
     /**
@@ -34,7 +35,7 @@ public class TimeService extends MicroService {
      */
     @Override
     protected void initialize() {
-        long terminateTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime) * Duration;
+        //long terminateTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime) * Duration;
         try {
             while (System.currentTimeMillis() < terminateTime) {
                 this.wait(TimeUnit.SECONDS.toMillis(TickTime));

@@ -41,16 +41,12 @@ public class CameraService extends MicroService {
         // First type of msg - TickBroadcast: Tracks system ticks and determines when to perform object detection
         subscribeBroadcast(TickBroadcast.class, tick ->{
             currentTick = tick.getTick();
-            // Check if the camera is operational and has detected objects
-            if (camera.getStatus() == STATUS.UP && camera.hasDetectedObjects()) {
-                // Ensure enough time has passed since the last detection
-                if (currentTick >= lastDetectionTick + camera.getFrequency()) { // ensures the camera waits the full frequency interval (F ticks) (before producing new data).
-                    StampedDetectedObjects detectedObject = camera.getNextDetectedObject();
-                    DetectObjectsEvent detectObjectsEvent = new DetectObjectsEvent(detectedObject);
-                    sendEvent(detectObjectsEvent);
-
-                    // Update last detection time
-                    lastDetectionTick = currentTick;
+            if (camera.getStatus() == STATUS.UP) {
+                // Process detected objects if it's time
+                StampedDetectedObjects detectedObjects = camera.getNextDetectedObjects();
+                if (detectedObjects != null && detectedObjects.getTime() == currentTick && currentTick >= lastDetectionTick + camera.getFrequency()) {
+                    sendEvent(new DetectObjectsEvent(detectedObjects)); // Send one DetectObjectsEvent containing all detected objects for the current time
+                    lastDetectionTick = currentTick; // Update last detection tick
                 }
             }
         });
