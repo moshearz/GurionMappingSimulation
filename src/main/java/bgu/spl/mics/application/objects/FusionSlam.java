@@ -1,6 +1,9 @@
 package bgu.spl.mics.application.objects;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Objects;
 
 /**
  * Manages the fusion of sensor data for simultaneous localization and mapping (SLAM).
@@ -8,16 +11,39 @@ import java.util.List;
  * Implements the Singleton pattern to ensure a single instance of FusionSlam exists.
  */
 public class FusionSlam {
-    // Singleton instance holder
-    private final List landmarks; // List of landmark on the map
-    private final List poses; // List of Robot locations for calculations
+    private List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
+    private List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
+    private FusionSlamHolder instanceHolder;
 
-    public FusionSlam(List landmarks, List poses) {
-        this.landmarks = landmarks;
-        this.poses = poses;
+    public FusionSlam getInstance() {
+        if (instanceHolder == null) {
+            instanceHolder = new FusionSlamHolder();
+        }
+        return instanceHolder.instance;
+    }
+
+    public void updateLandMark(String objectId, Pose pose) {
+
+//        LandMark selectedLandMark = null;
+//        for (LandMark currentLM : landmarks) {
+//            if (Objects.equals(currentLM.getId(), landMark.getId())) {
+//                selectedLandMark = currentLM;
+//            }
+//        }
+//        if (selectedLandMark == null) {
+//            landmarks.add(landMark);
+//        } else {
+//            List<CloudPoint> updatedCoordinates = selectedLandMark.getCoordinates();
+//            for (int i = 0; i < ; i++) {
+//
+//            }
+//            selectedLandMark.setCoordinates();
+//        }
     }
 
     private static class FusionSlamHolder {
-        // TODO: Implement singleton instance logic.
+        // Singleton instance holder
+        public FusionSlam instance;
     }
+
 }
