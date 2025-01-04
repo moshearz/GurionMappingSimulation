@@ -64,4 +64,5 @@ public class CameraService extends MicroService {
         System.out.println(getName() + " initialized.");
 
     }
+    //complete
 }

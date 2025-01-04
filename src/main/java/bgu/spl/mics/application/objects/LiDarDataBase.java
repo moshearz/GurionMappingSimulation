@@ -2,7 +2,6 @@ package bgu.spl.mics.application.objects;
 
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -38,7 +37,7 @@ public class LiDarDataBase {
         synchronized (cloudPointsList) { // Synchronize for safe iteration
             for (StampedCloudPoints point : cloudPointsList) {
                 if (point.getId().equals(id) && point.getTime() == time) {
-                    return point.getCloudPoints();
+                return point.getCloudPoints();
                 }
             }
         }

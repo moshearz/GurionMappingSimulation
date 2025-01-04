@@ -2,6 +2,7 @@ package bgu.spl.mics.application.objects;
 
 import java.sql.Array;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -13,12 +14,21 @@ public class TrackedObject {
     private final String id;
     private final int time;
     private final String description;
-    private final Array coordinates; //Maybe need to be changed to List<CloudPoint>
+    private final List<CloudPoint> coordinates; // List of coordinates (cloud points)
 
-    public TrackedObject(String id, int time, String description, Array coordinates) {
+
+    public TrackedObject(String id, int time, String description, List<CloudPoint> coordinates) {
         this.id = id;
         this.time = time;
         this.description = description;
         this.coordinates = coordinates;
     }
+
+    public String getId() { return id; }
+
+    public int getTime() { return time; }
+
+    public String getDescription() { return description; }
+
+    public List<CloudPoint> getCoordinates() { return coordinates; }
 }
