@@ -1,5 +1,6 @@
 package bgu.spl.mics.application.objects;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,24 +10,39 @@ import java.util.List;
 public class LandMark {
     private final String id;
     private final String description;
-    private CloudPoint coordinates;
+    private final List<CloudPoint> coordinates;
 
-    public LandMark(String id, String description, double globalX, double globalY) {
+    public LandMark(String id, String description, List<CloudPoint> coordinates) {
         this.id = id;
         this.description = description;
-        coordinates = new CloudPoint(globalX, globalY);
+        this.coordinates = coordinates;
     }
 
     public final String getId() {
         return id;
     }
 
-    public final CloudPoint getCoordinates() {
+    public final List<CloudPoint> getCoordinates() {
         return coordinates;
     }
 
-    public void updateCoordinates(double x, double y) {
-        coordinates.setX((coordinates.getX() + x)/2);
-        coordinates.setY((coordinates.getY() + y)/2);
+    public final String getDescription() {
+        return description;
+    }
+
+    /**
+     * @param newList updates each CloudPoint of the list by averaging the two CloudPoints in each spot.
+     *                Adds the remaining CloudPoints to the list if it contains more than the original.
+     */
+    public void updateCoordinates(List<CloudPoint> newList) {
+        int minSize = Integer.min(newList.size(), coordinates.size());
+        for (int i = 0; i < minSize; i++) {
+            coordinates.get(i).update(newList.get(i));
+        }
+        if (newList.size() > minSize) {
+            for (int i = minSize; i < newList.size(); i++) {
+                coordinates.add(newList.get(i));
+            }
+        }
     }
 }

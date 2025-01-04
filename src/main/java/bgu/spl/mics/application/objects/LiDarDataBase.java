@@ -1,21 +1,29 @@
 package bgu.spl.mics.application.objects;
 
 
+import com.google.gson.Gson;
+
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 
 /**
  * LiDarDataBase is a singleton class responsible for managing LiDAR data.
  * It provides access to cloud point data and other relevant information for tracked objects.
  */
 public class LiDarDataBase {
-    private final List<StampedCloudPoints> cloudPointsList;
     // Singleton instance. declared static because this ensures that there is only one instance of the LiDarDataBase class across the entire application
     // By setting it to null, we indicate that the LiDarDataBase instance has not yet been created. This allows us to lazily initialize it in the getInstance method
     private static LiDarDataBase instance = null;
+    private final List<StampedCloudPoints> cloudPointsList;
 
-    private LiDarDataBase() { this.cloudPointsList = new ArrayList<>(); }
+    private LiDarDataBase(List<StampedCloudPoints> cloudPointsList) {
+        this.cloudPointsList = cloudPointsList;
+    }
     /**
      * Returns the singleton instance of LiDarDataBase.
      *
@@ -24,8 +32,14 @@ public class LiDarDataBase {
      */
     public static synchronized LiDarDataBase getInstance(String filePath) {
         if (instance == null) {
-            instance = new LiDarDataBase();
-            System.out.println("(LiDarDataBase) initialized with: " + filePath);
+            Gson gson = new Gson();
+            try (FileReader reader = new FileReader(filePath)) {
+                Type cloudPointsListType = new TypeToken<List<StampedCloudPoints>>() {}.getType();
+                instance = new LiDarDataBase(gson.fromJson(reader, cloudPointsListType));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return instance;
     }
