@@ -33,16 +33,14 @@ public class Future<T> {
      *
 	 */
 	public T get() {
-		synchronized (lock) { // JVM attaches to each object at runtime it own monitor which has two states: possession or availaible
-			while (!status) { // waits until the futere object is resolved and eventually returns the result
-				try {
-					lock.wait(); // waits for resolve() calls to notifyAll()
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
+		while (!status) { // waits until the futere object is resolved and eventually returns the result
+			try {
+				lock.wait(); // waits for resolve() calls to notifyAll()
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
 			}
-			return result;
 		}
+		return result;
 	}
 
 	/**
@@ -60,9 +58,7 @@ public class Future<T> {
      * @return true if this object has been resolved, false otherwise
      */
 	public boolean isDone() {
-		synchronized (lock) {
-			return status;
-		}
+		return status;
 	}
 
 	/**
@@ -77,22 +73,20 @@ public class Future<T> {
      *         elapsed, return null.
      */
 	public T get(long timeout, TimeUnit unit) {
-		synchronized (lock) {
-			if (!status) { // waits until: Future is resolved OR specified timout duration past
-				try {
-					long endTime = System.currentTimeMillis() + unit.toMillis(timeout); // calculates the absolute "timestamp" of when the waiting period should end.
-					long timeLeft = unit.toMillis(timeout); // How much time left to wait' initially to full timeout duration
-					while (!status && timeLeft > 0) { // Because of Spurious wakeups we need thw while loop. this can happen when a thread calls the wait() method on an object and subsequently gets woken up without any actual notification or interruption.
-						lock.wait(timeLeft);
-						timeLeft = endTime - System.currentTimeMillis();
-					}
-				} catch (InterruptedException e) {
-					// Ensures that the thread itself (or other parts of the program), can detect and respond to interruption.
-					Thread.currentThread().interrupt();
+		while (!status) { // waits until: Future is resolved OR specified timout duration past
+			try {
+				long endTime = System.currentTimeMillis() + unit.toMillis(timeout); // calculates the absolute "timestamp" of when the waiting period should end.
+				long timeLeft = unit.toMillis(timeout); // How much time left to wait' initially to full timeout duration
+				while (!status && timeLeft > 0) { // Because of Spurious wakeups we need thw while loop. this can happen when a thread calls the wait() method on an object and subsequently gets woken up without any actual notification or interruption.
+					lock.wait(timeLeft);
+					timeLeft = endTime - System.currentTimeMillis();
 				}
+			} catch (InterruptedException e) {
+				// Ensures that the thread itself (or other parts of the program), can detect and respond to interruption.
+				Thread.currentThread().interrupt();
 			}
-			return result;
 		}
+		return result;
 	}
 
 }

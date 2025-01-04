@@ -21,4 +21,24 @@ public class TrackedObject {
         this.description = description;
         this.coordinates = coordinates;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public int getTime() {
+        return time;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public double getLocalX() {
+        return coordinates.getX();
+    }
+
+    public double getLocalY() {
+        return coordinates.getY();
+    }
 }

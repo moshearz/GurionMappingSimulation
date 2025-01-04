@@ -16,4 +16,8 @@ public class TrackedObjectsEvent implements Event<Boolean> {
     public TrackedObjectsEvent(List<TrackedObject> trackedObjects) {this.trackedObjects = trackedObjects;}
 
     public List<TrackedObject> getTrackedObjects() {return trackedObjects;}
+
+    public int getTrackedTickTime() {
+        return trackedObjects.get(0).getTime();
+    }
 }

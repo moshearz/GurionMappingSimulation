@@ -9,24 +9,24 @@ import java.util.List;
 public class LandMark {
     private final String id;
     private final String description;
-    private List<CloudPoint> coordinates;
-    private CloudPoint trueCoordinates = new CloudPoint(0, 0);
+    private CloudPoint coordinates;
 
-    public LandMark(String id, String description) {
+    public LandMark(String id, String description, double globalX, double globalY) {
         this.id = id;
         this.description = description;
+        coordinates = new CloudPoint(globalX, globalY);
     }
 
     public final String getId() {
         return id;
     }
 
-    public final List<CloudPoint> getCoordinatesList() {
+    public final CloudPoint getCoordinates() {
         return coordinates;
     }
 
-    public void addCoordinates(CloudPoint newCoordinates) {
-        coordinates.add(newCoordinates);
-        trueCoordinates = new CloudPoint(trueCoordinates.x + newCoordinates.x, trueCoordinates.y + newCoordinates.y);
+    public void updateCoordinates(double x, double y) {
+        coordinates.setX((coordinates.getX() + x)/2);
+        coordinates.setY((coordinates.getY() + y)/2);
     }
 }

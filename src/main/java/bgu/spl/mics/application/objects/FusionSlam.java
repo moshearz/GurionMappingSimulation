@@ -1,9 +1,6 @@
 package bgu.spl.mics.application.objects;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Manages the fusion of sensor data for simultaneous localization and mapping (SLAM).
@@ -15,6 +12,8 @@ public class FusionSlam {
     private List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
     private FusionSlamHolder instanceHolder;
 
+    private final Object Lock_landmarks = new Object();
+
     public FusionSlam getInstance() {
         if (instanceHolder == null) {
             instanceHolder = new FusionSlamHolder();
@@ -22,28 +21,48 @@ public class FusionSlam {
         return instanceHolder.instance;
     }
 
-    public void updateLandMark(String objectId, Pose pose) {
+    public void addPose(Pose pose) {
+        poses.add(pose);
+    }
 
-//        LandMark selectedLandMark = null;
-//        for (LandMark currentLM : landmarks) {
-//            if (Objects.equals(currentLM.getId(), landMark.getId())) {
-//                selectedLandMark = currentLM;
-//            }
-//        }
-//        if (selectedLandMark == null) {
-//            landmarks.add(landMark);
-//        } else {
-//            List<CloudPoint> updatedCoordinates = selectedLandMark.getCoordinates();
-//            for (int i = 0; i < ; i++) {
-//
-//            }
-//            selectedLandMark.setCoordinates();
-//        }
+    public Boolean poseExist(int tickTime) {
+        for (Pose pose : poses) {
+            if (pose.getTime() == tickTime) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Function is called only when the needed pose is saved
+    public void updateLandMark(TrackedObject object) {
+        for (Pose currentPose : poses) {
+            if (currentPose.getTime() == object.getTime()) {
+                double sin = Math.sin(Math.toRadians(currentPose.getYaw()));
+                double cos = Math.cos(Math.toRadians(currentPose.getYaw()));
+                LandMark currentLandMark = null;
+                synchronized (Lock_landmarks) {
+                    for (LandMark selected : landmarks) {
+                        if (Objects.equals(selected.getId(), object.getId())) {
+                            currentLandMark = selected;
+                            break;
+                        }
+                    }
+                    double newGlobalX = cos * object.getLocalX() - sin * object.getLocalY() + currentPose.getX();
+                    double newGlobalY = sin * object.getLocalX() - cos * object.getLocalY() + currentPose.getY();
+                    if (currentLandMark != null) {
+                        currentLandMark.updateCoordinates(newGlobalX, newGlobalY);
+                    } else {
+                        landmarks.add(new LandMark(object.getId(), object.getDescription(), newGlobalX, newGlobalY));
+                    }
+                }
+            }
+        }
     }
 
     private static class FusionSlamHolder {
         // Singleton instance holder
-        public FusionSlam instance;
+        public FusionSlam instance = new FusionSlam();
     }
 
 }
