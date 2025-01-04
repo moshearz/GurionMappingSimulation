@@ -1,6 +1,16 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.*;
+import bgu.spl.mics.application.objects.FusionSlam;
+import bgu.spl.mics.application.objects.TrackedObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -10,14 +20,16 @@ import bgu.spl.mics.MicroService;
  * transforming and updating the map with new landmarks.
  */
 public class FusionSlamService extends MicroService {
+    private final FusionSlam instance;
+    private final Map<Integer ,Future<PoseEvent>> timedPoses = new ConcurrentHashMap<>();
     /**
      * Constructor for FusionSlamService.
      *
      * @param fusionSlam The FusionSLAM object responsible for managing the global map.
      */
     public FusionSlamService(FusionSlam fusionSlam) {
-        super("Change_This_Name");
-        // TODO Implement this
+        super("Fusion-SLAM");
+        instance = fusionSlam;
     }
 
     /**
@@ -27,6 +39,31 @@ public class FusionSlamService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
+        subscribeEvent(TrackedObjectsEvent.class, objectsEvent -> {
+            // Sets up a Future Pose matching the tick time of the TrackedObjects
+            Future<PoseEvent> poseFuture = new Future<>();
+            timedPoses.put(objectsEvent.getTrackedTickTime(), poseFuture);
+            poseFuture.get();
+
+            for (TrackedObject object : objectsEvent.getTrackedObjects()) {
+                instance.updateLandMark(object);
+            }
+        });
+
+        subscribeEvent(PoseEvent.class, poseEvent -> {
+            instance.addPose(poseEvent.getCurrPose());
+            complete(poseEvent, poseEvent.getCurrPose());
+            timedPoses.get(poseEvent.getCurrPose().getTime()).resolve(poseEvent);
+        });
+
+        subscribeBroadcast(TerminatedBroadcast.class, terminatedEvent -> {
+            System.out.println(getName() + " received termination signal. Terminating.");
+            terminate();
+        });
+
+        subscribeBroadcast(CrashedBroadcast.class, crashedEvent -> {
+            System.out.println(getName() + " crashed");
+            terminate();
+        });
     }
 }

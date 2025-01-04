@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Event;
+import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
 
 /**
@@ -8,7 +9,7 @@ import bgu.spl.mics.application.objects.StampedDetectedObjects;
  * sent by: CameraService
  * handled by: LiDar workers.
  */
-public class DetectObjectsEvent  implements Event<Void> {
+public class DetectObjectsEvent  implements Event<DetectedObject> {
     private final StampedDetectedObjects detectedObjects;
 
     public DetectObjectsEvent(StampedDetectedObjects detectedObjects) {this.detectedObjects = detectedObjects;}
