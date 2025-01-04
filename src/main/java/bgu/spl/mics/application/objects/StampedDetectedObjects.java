@@ -22,5 +22,5 @@ public class StampedDetectedObjects {
 
     public int getTime() { return time; } //of the detection
 
-    public List<DetectedObject> getDetectedObjects() { return detectedObjects; }
+    public List<DetectedObject> getDetectedObjectsStamped() { return detectedObjects; }
 }
