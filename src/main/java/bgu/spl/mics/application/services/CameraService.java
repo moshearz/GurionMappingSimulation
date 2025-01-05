@@ -1,7 +1,9 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 
+import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.Camera;
@@ -9,6 +11,8 @@ import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.STATUS;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
+
+import java.util.Objects;
 
 /**
  * CameraService is responsible for processing data from the camera and
@@ -19,8 +23,7 @@ import bgu.spl.mics.application.messages.TerminatedBroadcast;
  */
 public class CameraService extends MicroService {
     private final Camera camera;
-    private int currentTick = 0; //curr sys tick
-    private int lastDetectionTick = 0; // last tick (when a detection event was sent)
+
     /**
      * Constructor for CameraService.
      *
@@ -40,16 +43,20 @@ public class CameraService extends MicroService {
     protected void initialize() {
         // First type of msg - TickBroadcast: Tracks system ticks and determines when to perform object detection
         subscribeBroadcast(TickBroadcast.class, tick ->{
-            currentTick = tick.getTick();
-            if (camera.getStatus() == STATUS.UP && camera.hasDetectedObjects()) { //ensures there’s at least one object in the list before proceeding.
-                if (currentTick >= lastDetectionTick + camera.getFrequency()) { // Ensures enough time has passed since the last detection, based on the camera's frequency.
-                    StampedDetectedObjects detectedObjects = camera.getNextDetectedObjects();
-                    if (detectedObjects != null) {
-                        DetectObjectsEvent detectObjectsEvent = new DetectObjectsEvent(detectedObjects);
-                        sendEvent(detectObjectsEvent);
-                        lastDetectionTick = currentTick;
+            if (camera.getStatus() == STATUS.UP) {
+                StampedDetectedObjects stampedDetectedObjects = camera.getStampedDetectedObjects(tick.getTick() - camera.getFrequency());
+                if (stampedDetectedObjects != null) {
+                    for (DetectedObject detectedObject : stampedDetectedObjects.getDetectedObjects()) {
+                        if (Objects.equals(detectedObject.getDescription(), "ERROR")) {
+                            sendBroadcast(new CrashedBroadcast("camera" + camera.getId()));
+                            camera.setStatus(STATUS.ERROR);
+                            terminate();
+                        }
                     }
+                    sendEvent(new DetectObjectsEvent(stampedDetectedObjects));
                 }
+            } else {
+                terminate();
             }
         });
         // Second type of msg - TerminatedBroadcast: Listens for termination signals from other services

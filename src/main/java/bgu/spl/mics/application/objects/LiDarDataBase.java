@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 /**
  * LiDarDataBase is a singleton class responsible for managing LiDAR data.
@@ -18,61 +19,35 @@ import java.lang.reflect.Type;
 public class LiDarDataBase {
     // Singleton instance. declared static because this ensures that there is only one instance of the LiDarDataBase class across the entire application
     // By setting it to null, we indicate that the LiDarDataBase instance has not yet been created. This allows us to lazily initialize it in the getInstance method
-    private static LiDarDataBase instance = null;
-    private final List<StampedCloudPoints> cloudPointsList;
+    private static LiDarDataBase instance;
+    private List<StampedCloudPoints> cloudPointsList;
 
-    private LiDarDataBase(List<StampedCloudPoints> cloudPointsList) {
-        this.cloudPointsList = cloudPointsList;
-    }
+    private LiDarDataBase() {}
     /**
      * Returns the singleton instance of LiDarDataBase.
      *
-     * @param filePath The path to the LiDAR data file.
      * @return The singleton instance of LiDarDataBase.
      */
-    public static synchronized LiDarDataBase getInstance(String filePath) {
+    public static synchronized LiDarDataBase getInstance() {
         if (instance == null) {
-            Gson gson = new Gson();
-            try (FileReader reader = new FileReader(filePath)) {
-                Type cloudPointsListType = new TypeToken<List<StampedCloudPoints>>() {}.getType();
-                instance = new LiDarDataBase(gson.fromJson(reader, cloudPointsListType));
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            instance = new LiDarDataBase();
         }
         return instance;
     }
 
-    //Adds new cloud points to the database
-    public synchronized void addCloudPoints(StampedCloudPoints point) { cloudPointsList.add(point); }
+    public void setDataBase(List<StampedCloudPoints> cloudPointsList) {
+        this.cloudPointsList = cloudPointsList;
+    }
 
     // Get cloud points by ID and time
-    public synchronized List<List<Double>> getCloudPoints(String id, int time) {
-        synchronized (cloudPointsList) { // Synchronize for safe iteration
-            for (StampedCloudPoints point : cloudPointsList) {
-                if (point.getId().equals(id) && point.getTime() == time) {
-                    return point.getCloudPoints();
-                }
+    public StampedCloudPoints getStampedCloudPoints(DetectedObject object, int tick) {
+        for (StampedCloudPoints cloudPoints : cloudPointsList) {
+            if (Objects.equals(cloudPoints.getId(), object.getId()) & cloudPoints.getTime() == tick) {
+                return cloudPoints;
             }
         }
-        return null; // if not found
+        return null;
     }
-    //Removes cloud points for a specific object ID and time-stamp. If the cloud points were REMOVED we will return True, else we will return False.
-    public synchronized boolean removeCloudPoints(String id, int time) { return cloudPointsList.removeIf(point -> point.getId().equals(id) && point.getTime() == time); }
-
-    //Updates cloud points for a specific object ID and time-stamp. If the cloud points were UPDATED we will return True, else we will return False.
-    public synchronized boolean updateCloudPoints(String id, int time, List<List<Double>> cloudPointsNEW) {
-        for (StampedCloudPoints point : cloudPointsList) {
-            if (point.getId().equals(id) && point.getTime() == time) {
-                point.setCloudPoints(cloudPointsNEW);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public synchronized List<StampedCloudPoints> getAllCloudPoints() { return new ArrayList<>(cloudPointsList); }
 }
 
 

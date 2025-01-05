@@ -1,5 +1,6 @@
 package bgu.spl.mics.application.objects;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,7 +22,13 @@ public class StampedCloudPoints {
 
     public int getTime() { return time; }
 
-    public List<List<Double>> getCloudPoints() { return cloudPoints; }
+    public List<CloudPoint> getCloudPoints() {
+        List<CloudPoint> transformed = new ArrayList<>();
+        for (List<Double> point : cloudPoints) {
+            transformed.add(new CloudPoint(point.get(0), point.get(1)));
+        }
+        return transformed;
+    }
     // mY
 
     public void setCloudPoints(List<List<Double>> cloudPoints) { this.cloudPoints = cloudPoints; }

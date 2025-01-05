@@ -1,5 +1,12 @@
 package bgu.spl.mics.application.objects;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -7,14 +14,19 @@ import java.util.List;
  * Provides information about the robot's position and movement.
  */
 public class GPSIMU {
-    private int currentTick; // Current Time
-    private STATUS status;
-    private final List<Pose> poseList; // List of the robot's position with time stamps
+    private int currentTick = 0; // Current Time
+    private STATUS status = STATUS.UP;
+    private final List<Pose> poseList = new ArrayList<>(); // List of the robot's position with time stamps
 
-    public GPSIMU(int currentTick, STATUS status, List<Pose> poseList) {
-        this.currentTick = currentTick;
-        this.status = status;
-        this.poseList = poseList;
+    public GPSIMU(String filePath) {
+        try (JsonReader reader = new JsonReader(new FileReader(filePath))) {
+            Gson gson = new Gson();
+            while (reader.hasNext()) {
+                poseList.add(gson.fromJson(reader, Pose.class));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Pose getCurrentPose(int tick) {

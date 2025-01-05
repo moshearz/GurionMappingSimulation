@@ -1,5 +1,13 @@
 package bgu.spl.mics.application.objects;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +26,7 @@ public class Camera {
         this.id = id;
         this.frequency = frequency;
         this.status = STATUS.UP;
-        this.detectedObjectsList = (detectedObjectsList != null) ? detectedObjectsList : new ArrayList<>();
+        this.detectedObjectsList = detectedObjectsList;
     }
 
     public int getId() {return id;}
@@ -29,22 +37,19 @@ public class Camera {
 
     public void setStatus(STATUS status) { this.status = status; }
 
-    public List<StampedDetectedObjects> getDetectedObjectsList() { return new ArrayList<>(detectedObjectsList); } // A copy of the list of detected objects. "Snapshot" as we learned in class.
+    public List<StampedDetectedObjects> getDetectedObjectsList() { return detectedObjectsList; }
+
+    public StampedDetectedObjects getStampedDetectedObjects(int tick) {
+        for (StampedDetectedObjects current : detectedObjectsList) {
+            if (current.getTime() == tick) {
+                return current;
+            }
+        }
+        return null;
+    }
 
     public void addDetectedObject(StampedDetectedObjects detectedObject) {
         this.detectedObjectsList.add(detectedObject);
         System.out.println("Camera " + id + " added detected object: " + detectedObject); // for debugging
     }
-
-    public StampedDetectedObjects getNextDetectedObjects() {
-        if (!detectedObjectsList.isEmpty()) {
-            return detectedObjectsList.remove(0); // Remove and return the first object
-        }
-        return null; // Return null if the list is empty
-    }
-
-    public boolean hasDetectedObjects() { return !detectedObjectsList.isEmpty(); }
-
-    public void clearDetectedObjects() { detectedObjectsList.clear(); } // doesn't seem to have a use
-
 }

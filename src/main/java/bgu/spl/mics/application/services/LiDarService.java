@@ -1,11 +1,9 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 
-import bgu.spl.mics.application.objects.CloudPoint;
-import bgu.spl.mics.application.objects.DetectedObject;
-import bgu.spl.mics.application.objects.LiDarDataBase;
-import bgu.spl.mics.application.objects.TrackedObject;
+import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.messages.TrackedObjectsEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
@@ -16,6 +14,7 @@ import bgu.spl.mics.application.messages.DetectObjectsEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -26,21 +25,16 @@ import java.util.List;
  * observations.
  */
 public class LiDarService extends MicroService {
-    private final int id; // Unique LiDAR sensor ID
-    private final int frequency; // Frequency of operation
-    private final LiDarDataBase lidarDB; // Reference to the LiDAR database
-    private int currentTick; // Tracks the current tick
+    private final LiDarWorkerTracker worker;
+
     /**
      * Constructor for LiDarService.
      *
-     * @param LiDarWorkerTracker A LiDAR Tracker worker object that this service will use to process data.
+     * @param worker A LiDAR Tracker worker object that this service will use to process data.
      */
-    public LiDarService(int id ,int frequency, LiDarDataBase lidarDB) {
-        super("LiDarService" + id);
-        this.id = id;
-        this.frequency = frequency;
-        this.lidarDB = lidarDB;
-        this.currentTick = 0;
+    public LiDarService(LiDarWorkerTracker worker) {
+        super("LiDarWorker" + worker.getId());
+        this.worker = worker;
     }
 
     /**
@@ -50,32 +44,44 @@ public class LiDarService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // Subscribe to TickBroadcast(tracks the global tick count)
-        // TimeServiece sends TickBroadcast msg at every tick ( the callback updates the currenttick so it keep track the simulation time)
         subscribeBroadcast(TickBroadcast.class, tick -> {
-            currentTick = tick.getTick();
+            worker.updateTick();
         });
-        // Subscribe to DetectObjectsEvent ( which sent by CameraService)
+
         subscribeEvent(DetectObjectsEvent.class, event -> {
-            // Ensures that enough time has passed since the detection ( the timestamp from "StampedDetectedObjects" object ) to process the data
-            if(currentTick >= event.getDetectedObjects().getTime() + frequency) {
-                List<TrackedObject> trackedObjectsList = new ArrayList<>();
-                for (DetectedObject detectedObject : event.getDetectedObjects().getDetectedObjectsStamped()){
-                    List<List<Double>> cloudPointsBeforeConvert = lidarDB.getCloudPoints(detectedObject.getId(), event.getDetectedObjects().getTime());
-                    List<CloudPoint> cloudPoints = convertToCloudPoints(cloudPointsBeforeConvert);
-                    if (cloudPoints != null) {
-                        TrackedObject trackedObject = new TrackedObject(detectedObject.getId(), event.getDetectedObjects().getTime(), detectedObject.getDescription(), cloudPoints);
-                        trackedObjectsList.add(trackedObject);
+            if (worker.getStatus() == STATUS.UP) {
+                if (worker.getTick() < event.getDetectedObjects().getTime() + worker.getFrequency()) {
+                    sendEvent(event);
+                } else {
+                    List<TrackedObject> trackedObjectsList = new ArrayList<>();
+                    for (DetectedObject detectedObject : event.getDetectedObjects().getDetectedObjects()) {
+                        StampedCloudPoints matchingCloudPoints = LiDarDataBase.getInstance().getStampedCloudPoints(detectedObject, worker.getTick());
+                        if (Objects.equals(matchingCloudPoints.getId(), "ERROR")) {
+                            sendBroadcast(new CrashedBroadcast(matchingCloudPoints.getId()));
+                            worker.setStatus(STATUS.ERROR);
+                            terminate();
+                        } else {
+                            TrackedObject trackedObject = new TrackedObject(detectedObject, matchingCloudPoints);
+                            trackedObjectsList.add(trackedObject);
+                        }
                     }
-                    // Send TrackedObjectsEvent to Fusion-SLAM
-                    if (!trackedObjectsList.isEmpty()) {
-                        sendEvent(new TrackedObjectsEvent(trackedObjectsList));
-                    }
+                    worker.setLastTrackedObjects(trackedObjectsList);
+                    sendEvent(new TrackedObjectsEvent(trackedObjectsList));
                 }
+            } else {
+                terminate();
             }
         });
+
+
+
+
+
+
         // Subscribe to TerminatedBroadcast
-        subscribeBroadcast(TerminatedBroadcast.class, terminated -> terminate());
+        subscribeBroadcast(TerminatedBroadcast.class, terminated -> {
+
+        });
 
         // Subscribe to CrashedBroadcast
         subscribeBroadcast(CrashedBroadcast.class, broadcast -> {

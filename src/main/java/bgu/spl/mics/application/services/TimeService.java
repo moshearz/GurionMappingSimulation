@@ -13,7 +13,7 @@ public class TimeService extends MicroService {
 
     private final int TickTime;
     private final int Duration;
-    private int currentTick;
+    private int currentTick = 0;
 
     /**
      * Constructor for TimeService.
@@ -25,7 +25,6 @@ public class TimeService extends MicroService {
         super("TimeService");
         this.TickTime = TickTime;
         this.Duration = Duration;
-        this.currentTick = 0;
     }
 
     /**
