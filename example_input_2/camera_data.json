@@ -204,7 +204,8 @@
                         "description": "Circular Base"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 4,
                 "detectedObjects": [
                     {
@@ -220,7 +221,8 @@
                         "description": "Wall"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 5,
                 "detectedObjects": [
                     {
@@ -236,7 +238,8 @@
                         "description": "Chair Base"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 6,
                 "detectedObjects": [
                     {
@@ -256,7 +259,8 @@
                         "description": "Bed"
                     }
                 ]
-            },            {
+            },
+            {
                 "time": 7,
                 "detectedObjects": [
                     {
@@ -285,7 +289,8 @@
                         "description": "Wall"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 9,
                 "detectedObjects": [
                     {
@@ -330,7 +335,8 @@
                         "description": "A bin"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 11,
                 "detectedObjects": [
                     {
@@ -350,7 +356,8 @@
                         "description": "Wall"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 12,
                 "detectedObjects": [
                     {
@@ -374,7 +381,8 @@
                         "description": "Circular Base"
                     }
                 ]
-            },{
+            },
+            {
                 "time": 13,
                 "detectedObjects": [
                 ]

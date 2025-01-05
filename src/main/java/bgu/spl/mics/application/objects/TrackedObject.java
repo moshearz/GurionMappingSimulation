@@ -30,5 +30,5 @@ public class TrackedObject {
 
     public String getDescription() { return description; }
 
-    public List<CloudPoint> getCoordinates() { return coordinates; }
+    public List<CloudPoint> getCoordinates() { return coordinates;}
 }

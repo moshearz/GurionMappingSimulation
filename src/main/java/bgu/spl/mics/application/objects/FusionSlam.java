@@ -8,17 +8,15 @@ import java.util.*;
  * Implements the Singleton pattern to ensure a single instance of FusionSlam exists.
  */
 public class FusionSlam {
-    private List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
-    private List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
-    private FusionSlamHolder instanceHolder;
+    private final List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
+    private final List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
 
     private final Object Lock_landmarks = new Object();
 
-    public FusionSlam getInstance() {
-        if (instanceHolder == null) {
-            instanceHolder = new FusionSlamHolder();
-        }
-        return instanceHolder.instance;
+    private FusionSlam() {}
+
+    public static FusionSlam getInstance() {
+        return FusionSlamHolder.instance;
     }
 
     public void addPose(Pose pose) {
@@ -40,6 +38,13 @@ public class FusionSlam {
             if (currentPose.getTime() == object.getTime()) {
                 double sin = Math.sin(Math.toRadians(currentPose.getYaw()));
                 double cos = Math.cos(Math.toRadians(currentPose.getYaw()));
+                List<CloudPoint> additionalData = new ArrayList<>();
+                for (CloudPoint cloudPoint : object.getCoordinates()) {
+                    additionalData.add(new CloudPoint(
+                            cos * cloudPoint.getX() - sin * cloudPoint.getY() + currentPose.getX()
+                            ,sin * cloudPoint.getX() - cos * cloudPoint.getY() + currentPose.getY())
+                    );
+                }
                 LandMark currentLandMark = null;
                 synchronized (Lock_landmarks) {
                     for (LandMark selected : landmarks) {
@@ -48,12 +53,10 @@ public class FusionSlam {
                             break;
                         }
                     }
-                    double newGlobalX = cos * object.getLocalX() - sin * object.getLocalY() + currentPose.getX();
-                    double newGlobalY = sin * object.getLocalX() - cos * object.getLocalY() + currentPose.getY();
-                    if (currentLandMark != null) {
-                        currentLandMark.updateCoordinates(newGlobalX, newGlobalY);
-                    } else {
-                        landmarks.add(new LandMark(object.getId(), object.getDescription(), newGlobalX, newGlobalY));
+                    if (currentLandMark == null) { // When object with specific ID doesn't exist
+                        landmarks.add( new LandMark(object.getId(), object.getDescription(), additionalData));
+                    } else { // When the object exists and needs to update the CloudPoints
+                        currentLandMark.updateCoordinates(additionalData);
                     }
                 }
             }
@@ -62,7 +65,7 @@ public class FusionSlam {
 
     private static class FusionSlamHolder {
         // Singleton instance holder
-        public FusionSlam instance = new FusionSlam();
+        private static final FusionSlam instance = new FusionSlam();
     }
 
 }

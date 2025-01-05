@@ -12,4 +12,17 @@ public class CloudPoint {
         this.x = x;
         this.y = y;
     }
+
+    public final double getX() {
+        return x;
+    }
+
+    public final double getY() {
+        return y;
+    }
+
+    public void update(CloudPoint newPoint) {
+        x = (x + newPoint.getX()) / 2;
+        y = (y + newPoint.getY()) / 2;
+    }
 }
