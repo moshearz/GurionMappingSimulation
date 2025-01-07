@@ -81,6 +81,6 @@ public class FusionSlamService extends MicroService {
             }
         });
 
-
+        //System.out.println(getName() + " initialized.");
     }
 }

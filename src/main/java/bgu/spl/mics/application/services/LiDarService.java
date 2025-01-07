@@ -46,6 +46,7 @@ public class LiDarService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, tick -> {
             List<TrackedObject> trackedObjectList = worker.readyTrackedList(tick.getTick());
+            System.out.println("tick: " + tick);
             while (trackedObjectList != null) {
                 StatisticalFolder.getInstance().updateTrackedObjectsTotal(trackedObjectList.size());
                 sendEvent(new TrackedObjectsEvent(trackedObjectList));
@@ -79,6 +80,8 @@ public class LiDarService extends MicroService {
             instance.addLastLidarFrames("LiDarTrackerWorker " + worker.getId(), worker.getLastTrackedObjects());
             sendBroadcast(new CrashedBroadcast(instance.getErrorMessage(), instance.getFaultySensor()));
         });
+
+        //System.out.println(getName() + " initialized.");
     }
 
     // Converts raw cloud point data (List<List<Double>>) into List<CloudPoint>.

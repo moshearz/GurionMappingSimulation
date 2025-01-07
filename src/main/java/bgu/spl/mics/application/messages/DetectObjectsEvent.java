@@ -12,7 +12,10 @@ import bgu.spl.mics.application.objects.StampedDetectedObjects;
 public class DetectObjectsEvent  implements Event<DetectedObject> {
     private final StampedDetectedObjects detectedObjects;
 
-    public DetectObjectsEvent(StampedDetectedObjects detectedObjects) {this.detectedObjects = detectedObjects;}
+    public DetectObjectsEvent(StampedDetectedObjects detectedObjects) {
+        this.detectedObjects = detectedObjects;
+
+    }
 
     public StampedDetectedObjects getStampedDetectedObjects() {return detectedObjects;}
 }
