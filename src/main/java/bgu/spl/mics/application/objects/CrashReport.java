@@ -45,4 +45,12 @@ public class CrashReport {
     public void setStatistics(StatisticalFolder statistics) {
         this.statistics = statistics;
     }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public String getFaultySensor() {
+        return faultySensor;
+    }
 }

@@ -69,9 +69,10 @@ public class CameraService extends MicroService {
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
-            System.out.println(getName() + " received crash signal.");
             terminate();
-            CrashReport.getInstance().addLastCameraFrame("Camera " + camera.getId(), camera.getLastDetectedObjects());
+            CrashReport instance = CrashReport.getInstance();
+            instance.addLastCameraFrame("Camera " + camera.getId(), camera.getLastDetectedObjects());
+            sendBroadcast(new CrashedBroadcast(instance.getErrorMessage(), instance.getFaultySensor()));
         });
 
         System.out.println(getName() + " initialized.");

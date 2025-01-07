@@ -53,7 +53,6 @@ public class PoseService extends MicroService {
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crash -> {
-            System.out.println(getName() + " received crash signal.");
             terminate();
             CrashReport.getInstance().setPoses(gpsimu.getPoseList().subList(0, gpsimu.getCurrentTick()));
         });
