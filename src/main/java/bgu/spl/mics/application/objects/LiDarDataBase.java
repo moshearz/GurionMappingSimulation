@@ -1,15 +1,6 @@
 package bgu.spl.mics.application.objects;
 
-
-import com.google.gson.Gson;
-
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
@@ -21,6 +12,7 @@ public class LiDarDataBase {
     // By setting it to null, we indicate that the LiDarDataBase instance has not yet been created. This allows us to lazily initialize it in the getInstance method
     private static LiDarDataBase instance;
     private List<StampedCloudPoints> cloudPointsList;
+    private int totalLeft;
 
     private LiDarDataBase() {}
     /**
@@ -28,7 +20,7 @@ public class LiDarDataBase {
      *
      * @return The singleton instance of LiDarDataBase.
      */
-    public static synchronized LiDarDataBase getInstance() {
+    public static LiDarDataBase getInstance() {
         if (instance == null) {
             instance = new LiDarDataBase();
         }
@@ -37,16 +29,22 @@ public class LiDarDataBase {
 
     public void setDataBase(List<StampedCloudPoints> cloudPointsList) {
         this.cloudPointsList = cloudPointsList;
+        totalLeft = cloudPointsList.size();
     }
 
     // Get cloud points by ID and time
     public StampedCloudPoints getStampedCloudPoints(DetectedObject object, int tick) {
         for (StampedCloudPoints cloudPoints : cloudPointsList) {
             if (Objects.equals(cloudPoints.getId(), object.getId()) & cloudPoints.getTime() == tick) {
+                totalLeft--;
                 return cloudPoints;
             }
         }
-        return null;
+        return null; // will never reach here
+    }
+
+    public Boolean isDone() {
+        return totalLeft == 0;
     }
 }
 

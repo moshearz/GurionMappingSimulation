@@ -1,7 +1,7 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Broadcast;
-
+import java.lang.reflect.Type;
 
 
 /**
@@ -10,9 +10,9 @@ import bgu.spl.mics.Broadcast;
  * used for: notifying all other services that the service sending the broadcast will terminate
  */
 public class TerminatedBroadcast implements Broadcast {
-    private final String serviceName;
+    private final Type microServiceType;
 
-    public TerminatedBroadcast(String serviceName) { this.serviceName = serviceName; }
+    public TerminatedBroadcast(Type microServiceType) { this.microServiceType = microServiceType; }
 
-    public String getServiceName() { return serviceName; }
+    public Type getMicroServiceType() { return microServiceType; }
 }

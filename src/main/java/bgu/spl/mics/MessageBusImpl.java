@@ -44,9 +44,6 @@ public class MessageBusImpl implements MessageBus {
 		roundRobinIndices = new ConcurrentHashMap<>(); // Thread-safe mapping for round-robin indices
 	}
 
-	// Singleton instance
-	private static MessageBusImpl instance_ = null;
-
 	/**
 	 * Public method to get the Singleton instance of the MessageBusImpl.
 	 * Ensures thread-safe instantiation.
@@ -159,7 +156,6 @@ public class MessageBusImpl implements MessageBus {
 		//Only if necessary, removed associated futers
 		//entrySet() returns a set view of the key-value pairs in the eventFuteres map. then "removeIf(...)" iterates over the entries in the Set and removes any entry where the provided condition in the lambda
 		eventFutures.entrySet().removeIf(entry -> entry.getValue().equals(m));
-
 	}
 
 	@Override

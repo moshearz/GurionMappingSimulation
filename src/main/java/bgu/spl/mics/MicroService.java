@@ -164,6 +164,7 @@ public abstract class MicroService implements Runnable {
             try {
                 Message msg = messageBus.awaitMessage(this); // Wait for the next message and retrieve the next message
                 //Find and Execute the callback
+                @SuppressWarnings("unchecked")
                 Callback<Message> callback = (Callback<Message>) callbacks.get(msg.getClass());
                 if (callback != null)
                     callback.call(msg);
@@ -173,8 +174,6 @@ public abstract class MicroService implements Runnable {
                 Thread.currentThread().interrupt();
             }
         }
-        // Send termination broadcast and unregister before exiting
-        sendBroadcast(new TerminatedBroadcast(getName()));
         messageBus.unregister(this); // Unregister the MicroService from the MessageBus before exiting
     }
 

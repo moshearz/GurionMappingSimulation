@@ -8,9 +8,11 @@ import bgu.spl.mics.Broadcast;
  */
 public class CrashedBroadcast implements Broadcast {
 
-    private final String serviceName;
+    private final String error;
+    private final String faultySensor;
 
-    public CrashedBroadcast(String serviceName) {this.serviceName = serviceName;}
-
-    public String getServiceName() {return serviceName;}
+    public CrashedBroadcast(String error, String faultySensor) {
+        this.error = error;
+        this.faultySensor = faultySensor;
+    }
 }

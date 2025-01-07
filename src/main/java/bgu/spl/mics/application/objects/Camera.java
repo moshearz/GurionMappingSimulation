@@ -1,14 +1,5 @@
 package bgu.spl.mics.application.objects;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
-
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,16 +31,15 @@ public class Camera {
     public List<StampedDetectedObjects> getDetectedObjectsList() { return detectedObjectsList; }
 
     public StampedDetectedObjects getStampedDetectedObjects(int tick) {
-        for (StampedDetectedObjects current : detectedObjectsList) {
-            if (current.getTime() == tick) {
-                return current;
+        try {
+            if (detectedObjectsList.get(0).getTime() + frequency <= tick) {
+                return detectedObjectsList.remove(0);
             }
-        }
+        } catch (IndexOutOfBoundsException ignored) {}
         return null;
     }
 
-    public void addDetectedObject(StampedDetectedObjects detectedObject) {
-        this.detectedObjectsList.add(detectedObject);
-        System.out.println("Camera " + id + " added detected object: " + detectedObject); // for debugging
+    public Boolean isEmpty() {
+        return detectedObjectsList.isEmpty();
     }
 }

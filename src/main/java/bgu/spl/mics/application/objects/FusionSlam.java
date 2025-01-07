@@ -11,8 +11,9 @@ import java.util.Objects;
  * Implements the Singleton pattern to ensure a single instance of FusionSlam exists.
  */
 public class FusionSlam {
-    private final List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
-    private final List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
+    private List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
+    private List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
+    private int totalMicroServices;
 
     private final Object Lock_landmarks = new Object();
 
@@ -20,6 +21,18 @@ public class FusionSlam {
 
     public static FusionSlam getInstance() {
         return FusionSlamHolder.instance;
+    }
+
+    public void setTotalMS(int totalMicroServices) {
+        this.totalMicroServices = totalMicroServices;
+    }
+
+    public Boolean updateTotal() {
+        return --totalMicroServices == 0;
+    }
+
+    public List<LandMark> getLandmarks() {
+        return landmarks;
     }
 
     public void addPose(Pose pose) {
@@ -58,6 +71,7 @@ public class FusionSlam {
                     }
                     if (currentLandMark == null) { // When object with specific ID doesn't exist
                         landmarks.add( new LandMark(object.getId(), object.getDescription(), additionalData));
+                        StatisticalFolder.getInstance().updateLandmarksTotal();
                     } else { // When the object exists and needs to update the CloudPoints
                         currentLandMark.updateCoordinates(additionalData);
                     }

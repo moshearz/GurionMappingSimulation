@@ -2,10 +2,7 @@ package bgu.spl.mics.application;
 
 import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.application.objects.*;
-import bgu.spl.mics.application.services.CameraService;
-import bgu.spl.mics.application.services.LiDarService;
-import bgu.spl.mics.application.services.PoseService;
-import bgu.spl.mics.application.services.TimeService;
+import bgu.spl.mics.application.services.*;
 import com.google.gson.*;
 
 import java.io.FileReader;
@@ -84,15 +81,24 @@ public class GurionRockRunner {
             int Duration = root.getAsJsonObject("Duration").getAsInt();
             TimeService globalClock = new TimeService(TickTime, Duration);
 
+            FusionSlamService fusionSlamService = new FusionSlamService(FusionSlam.getInstance());
+
             MessageBusImpl simulation = MessageBusImpl.getInstance();
+
+            StatisticalFolder stats = StatisticalFolder.getInstance();
+
             for (CameraService microService : cameraServiceList) {
-                simulation.register(microService);
+                microService.run();
             }
             for (LiDarService microService : liDarWorkerTrackerList) {
-                simulation.register(microService);
+                microService.run();
             }
-            simulation.register(poseService);
-            simulation.register(globalClock);
+            poseService.run();
+            fusionSlamService.run();
+
+            FusionSlam.getInstance().setTotalMS(cameraServiceList.size() + liDarWorkerTrackerList.size());
+
+            globalClock.run();
 
         } catch (IOException e) {
             e.printStackTrace();

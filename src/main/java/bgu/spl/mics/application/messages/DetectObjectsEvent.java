@@ -14,5 +14,5 @@ public class DetectObjectsEvent  implements Event<DetectedObject> {
 
     public DetectObjectsEvent(StampedDetectedObjects detectedObjects) {this.detectedObjects = detectedObjects;}
 
-    public StampedDetectedObjects getDetectedObjects() {return detectedObjects;}
+    public StampedDetectedObjects getStampedDetectedObjects() {return detectedObjects;}
 }

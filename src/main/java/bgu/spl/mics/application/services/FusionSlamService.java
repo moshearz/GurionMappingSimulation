@@ -4,7 +4,13 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.objects.FusionSlam;
+import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.objects.TrackedObject;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,14 +58,23 @@ public class FusionSlamService extends MicroService {
             timedPoses.get(poseEvent.getCurrPose().getTime()).resolve(poseEvent);
         });
 
-        subscribeBroadcast(TerminatedBroadcast.class, terminatedEvent -> {
-            System.out.println(getName() + " received termination signal. Terminating.");
-            terminate();
+        subscribeBroadcast(TerminatedBroadcast.class, termination -> {
+            if (instance.updateTotal()) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                StatisticalFolder.getInstance().setLandMarks(instance.getLandmarks());
+                String jsonString = gson.toJson(StatisticalFolder.getInstance());
+                try (FileWriter writer = new FileWriter("src/main/java/bgu/spl/mics/application/output_file.json")) {
+                    gson.toJson(StatisticalFolder.getInstance(), writer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
+            }
         });
 
-        subscribeBroadcast(CrashedBroadcast.class, crashedEvent -> {
-            System.out.println(getName() + " crashed");
-            terminate();
+        subscribeBroadcast(CrashedBroadcast.class, crashed -> {
+
         });
     }
 }

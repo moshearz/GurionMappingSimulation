@@ -1,8 +1,10 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
-
+import bgu.spl.mics.application.objects.StatisticalFolder;
+import com.google.gson.reflect.TypeToken;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -12,8 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class TimeService extends MicroService {
 
     private final int TickTime;
-    private final int Duration;
-    private int currentTick = 0;
+    private int Duration;
 
     /**
      * Constructor for TimeService.
@@ -33,15 +34,29 @@ public class TimeService extends MicroService {
      */
     @Override
     protected void initialize() {
-        //long terminateTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime) * Duration;
-        try {
-            while (currentTick < Duration) {
-                this.wait(TimeUnit.SECONDS.toMillis(TickTime));
-                sendBroadcast(new TickBroadcast(++currentTick));
+        subscribeBroadcast(TerminatedBroadcast.class, termination -> {
+            if (termination.getMicroServiceType() == new TypeToken<FusionSlamService>() {}.getType()) {
+                Duration = -1; // Meaning the loop will end
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        terminate();
+        });
+
+        subscribeBroadcast(TickBroadcast.class, tick -> {
+            if (tick.getTick() <= Duration) {
+                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime);
+                while (System.currentTimeMillis() < endTime) {
+                    try {
+                        this.wait(endTime - System.currentTimeMillis());
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                sendBroadcast(new TickBroadcast(tick.getTick() + 1));
+            } else {
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(TimeService.class));
+            }
+        });
+
+        sendBroadcast(new TickBroadcast(1));
     }
 }

@@ -9,7 +9,7 @@ import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
-
+import com.google.gson.reflect.TypeToken;
 
 
 import java.util.ArrayList;
@@ -49,44 +49,48 @@ public class LiDarService extends MicroService {
         });
 
         subscribeEvent(DetectObjectsEvent.class, event -> {
-            if (worker.getStatus() == STATUS.UP) {
-                if (worker.getTick() < event.getDetectedObjects().getTime() + worker.getFrequency()) {
-                    sendEvent(event);
-                } else {
-                    List<TrackedObject> trackedObjectsList = new ArrayList<>();
-                    for (DetectedObject detectedObject : event.getDetectedObjects().getDetectedObjects()) {
-                        StampedCloudPoints matchingCloudPoints = LiDarDataBase.getInstance().getStampedCloudPoints(detectedObject, worker.getTick());
-                        if (Objects.equals(matchingCloudPoints.getId(), "ERROR")) {
-                            sendBroadcast(new CrashedBroadcast(matchingCloudPoints.getId()));
-                            worker.setStatus(STATUS.ERROR);
-                            terminate();
-                        } else {
-                            TrackedObject trackedObject = new TrackedObject(detectedObject, matchingCloudPoints);
-                            trackedObjectsList.add(trackedObject);
-                        }
-                    }
-                    worker.setLastTrackedObjects(trackedObjectsList);
-                    sendEvent(new TrackedObjectsEvent(trackedObjectsList));
-                }
+            if (worker.getTick() < event.getStampedDetectedObjects().getTime() + worker.getFrequency()) {
+                sendEvent(event);
             } else {
+                List<TrackedObject> trackedObjectsList = new ArrayList<>();
+                for (DetectedObject detectedObject : event.getStampedDetectedObjects().getDetectedObjects()) {
+                    StampedCloudPoints matchingCloudPoints = LiDarDataBase.getInstance().getStampedCloudPoints(detectedObject, event.getStampedDetectedObjects().getTime());
+                    if (Objects.equals(matchingCloudPoints.getId(), "ERROR")) {
+                        worker.setStatus(STATUS.ERROR);
+                        terminate();
+                        sendBroadcast(new CrashedBroadcast("LiDar Worker " + worker.getId() + " disconnected", matchingCloudPoints.getId()));
+                    } else {
+                        trackedObjectsList.add(new TrackedObject(detectedObject, matchingCloudPoints));
+                    }
+                }
+                if (worker.getStatus() == STATUS.UP) {
+                    worker.setLastTrackedObjects(trackedObjectsList);
+                    StatisticalFolder.getInstance().updateTrackedObjectsTotal(trackedObjectsList.size());
+                    sendEvent(new TrackedObjectsEvent(trackedObjectsList));
+                    if (LiDarDataBase.getInstance().isDone()) {
+                        worker.setStatus(STATUS.DOWN);
+                        terminate();
+                        sendBroadcast(new TerminatedBroadcast(new TypeToken<LiDarService>() {}.getType()));
+                    }
+                }
+
+            }
+        });
+
+        // Subscribe to TerminatedBroadcast
+        subscribeBroadcast(TerminatedBroadcast.class, termination -> {
+            if (termination.getMicroServiceType() == new TypeToken<TimeService>() {}.getType()) {
+                terminate();
+            } else if (termination.getMicroServiceType() == new TypeToken<LiDarService>() {}.getType()) {
                 terminate();
             }
         });
 
-
-
-
-
-
-        // Subscribe to TerminatedBroadcast
-        subscribeBroadcast(TerminatedBroadcast.class, terminated -> {
-
-        });
-
         // Subscribe to CrashedBroadcast
-        subscribeBroadcast(CrashedBroadcast.class, broadcast -> {
+        subscribeBroadcast(CrashedBroadcast.class, crashed -> {
+            System.out.println(getName() + " received crash signal.");
             terminate();
-            //??
+            StatisticalFolder.getInstance().addFinalLidarSnapshot(worker.getLastTrackedObjects());
         });
     }
 

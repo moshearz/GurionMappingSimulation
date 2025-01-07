@@ -1,11 +1,13 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.PoseEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.objects.GPSIMU;
 import bgu.spl.mics.application.objects.Pose;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * PoseService is responsible for maintaining the robot's current pose (position and orientation)
@@ -32,9 +34,20 @@ public class PoseService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, tick ->{
             Pose currPose = gpsimu.getCurrentPose(tick.getTick());
-            if (currPose != null) { sendEvent(new PoseEvent(currPose));}
+            if (currPose != null) {
+                sendEvent(new PoseEvent(currPose));
+            }
         });
 
-        subscribeBroadcast(TerminatedBroadcast.class, terminated ->{ terminate();});
+        subscribeBroadcast(TerminatedBroadcast.class, termination -> {
+            if (termination.getMicroServiceType() == new TypeToken<TimeService>() {}.getType()) {
+                terminate();
+            }
+        });
+
+        subscribeBroadcast(CrashedBroadcast.class, crash -> {
+            System.out.println(getName() + " received crash signal.");
+            terminate();
+        });
     }
 }

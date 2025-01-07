@@ -19,4 +19,12 @@ public class StampedDetectedObjects {
     public int getTime() { return time; } //of the detection
 
     public List<DetectedObject> getDetectedObjects() { return detectedObjects; }
+
+    public Boolean isEmpty() {
+        return detectedObjects.isEmpty();
+    }
+
+    public int size() {
+        return detectedObjects.size();
+    }
 }
