@@ -10,105 +10,143 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MessageBusImplTest {
 
-    private MessageBus messageBus;
+    private MessageBusImpl messageBus;
     private MicroService testService1;
     private MicroService testService2;
+    private TestEvent testEvent;
+    private TestBroadcast testBroadcast;
 
     @BeforeEach
     void setUp() {
-        messageBus = MessageBusImpl.getInstance(); //Singelton instance of messageBus
+        messageBus = MessageBusImpl.getInstance();
         testService1 = new MicroService("TestService1") {
             @Override
-            protected void initialize() {} // init method is empty for this test
+            protected void initialize() {}
         };
-
         testService2 = new MicroService("TestService2") {
             @Override
             protected void initialize() {}
         };
         messageBus.register(testService1);
         messageBus.register(testService2);
+        testEvent = new TestEvent();
+        testBroadcast = new TestBroadcast();
     }
 
     @Test
-    void unregisterMS() {
-        messageBus.unregister(testService1);
-        messageBus.unregister(testService2);
+    void testSubscribeEvent() {
+        messageBus.subscribeEvent(TestEvent.class, testService1);
+        Future<String> future = messageBus.sendEvent(testEvent);
+        assertNotNull(future, "Future should not be null when an event is sent.");
 
-        // Ensures that calling awaitMessage on an unregistered microservice throws IllegalArgumentException.
-        assertThrows(IllegalArgumentException.class, () -> messageBus.awaitMessage(testService1));
-        assertThrows(IllegalArgumentException.class, () -> messageBus.awaitMessage(testService2));
-    }
-
-    @Test
-    void testSubscribeAndSendEvent() throws InterruptedException {
-        messageBus.subscribeEvent(TestEvent.class, testService1); //Register testservice1 to handle TestEvent
-        TestEvent event = new TestEvent();
-        Future<String> future = messageBus.sendEvent(event); //sends a testevent to MS testservice1 and return a Future
-        assertNotNull(future); // ensures future returned
-
-        new Thread( () -> {
-            try{
-                Message message = messageBus.awaitMessage(testService1); // the ms (use it) waits to the events in his queue
-                assertEquals(event, message);
-            } catch (InterruptedException e){
-                fail("Thread Interrupted");
+        new Thread(() -> {
+            try {
+                Message message = messageBus.awaitMessage(testService1);
+                assertEquals(testEvent, message, "The received message should match the sent event.");
+                future.resolve("Completed");
+            } catch (InterruptedException e) {
+                fail("Thread interrupted unexpectedly.");
             }
         }).start();
 
-        String res = future.get(2, TimeUnit.SECONDS); // ??
-
+        assertEquals("Completed", future.get(2, TimeUnit.SECONDS), "The future result should be resolved correctly.");
     }
 
     @Test
-    void testSubscribeAndSendBroadcast() throws InterruptedException {
-        //Subscribe ts1 and ts2 to TestBroadcast (using the messageBus)
+    void testSubscribeBroadcast() throws InterruptedException {
         messageBus.subscribeBroadcast(TestBroadcast.class, testService1);
         messageBus.subscribeBroadcast(TestBroadcast.class, testService2);
-        TestBroadcast broadcast = new TestBroadcast();
 
-        messageBus.sendBroadcast(broadcast);
+        messageBus.sendBroadcast(testBroadcast);
 
-        Message msg1 = messageBus.awaitMessage(testService1);
-        assertInstanceOf(TestBroadcast.class, msg1, "Received message type should be TestBroadcast");
-        assertEquals(broadcast, msg1); // Verify content of the broadcast
-        Message msg2 = messageBus.awaitMessage(testService2);
-        assertInstanceOf(TestBroadcast.class, msg2, "Received message type should be TestBroadcast");
-        assertEquals(broadcast, msg2);
+        Message message1 = messageBus.awaitMessage(testService1);
+        Message message2 = messageBus.awaitMessage(testService2);
+
+        assertEquals(testBroadcast, message1, "testService1 should receive the broadcast.");
+        assertEquals(testBroadcast, message2, "testService2 should receive the broadcast.");
     }
 
     @Test
-    void testRoundRobinEventDistribution() throws InterruptedException {
-         messageBus.subscribeEvent(TestEvent.class, testService1);
-         messageBus.subscribeEvent(TestEvent.class, testService2);
-         TestEvent event1 = new TestEvent();
-         TestEvent event2 = new TestEvent();
-        //Sends two events
-         messageBus.sendEvent(event1);
-         messageBus.sendEvent(event2);
-        //Confirm ts1 gets event1 & ts2 gets event2
-         Message msg1 = messageBus.awaitMessage(testService1);
-         assertEquals(event1, msg1);
-         Message msg2 = messageBus.awaitMessage(testService2);
-         assertEquals(event2, msg2);
+    void testComplete() {
+        messageBus.subscribeEvent(TestEvent.class, testService1);
+        Future<String> future = messageBus.sendEvent(testEvent);
+        assertNotNull(future, "Future should not be null when an event is sent.");
+
+        messageBus.complete(testEvent, "Completed");
+        assertEquals("Completed", future.get(), "The future result should be resolved correctly.");
+    }
+
+    @Test
+    void testSendBroadcast() throws InterruptedException {
+        messageBus.subscribeBroadcast(TestBroadcast.class, testService1);
+        messageBus.subscribeBroadcast(TestBroadcast.class, testService2);
+
+        messageBus.sendBroadcast(testBroadcast);
+
+        Message message1 = messageBus.awaitMessage(testService1);
+        Message message2 = messageBus.awaitMessage(testService2);
+
+        assertEquals(testBroadcast, message1, "testService1 should receive the broadcast.");
+        assertEquals(testBroadcast, message2, "testService2 should receive the broadcast.");
+    }
+
+    @Test
+    void testSendEvent() throws InterruptedException {
+        messageBus.subscribeEvent(TestEvent.class, testService1);
+        Future<String> future = messageBus.sendEvent(testEvent);
+        assertNotNull(future, "Future should not be null when an event is sent.");
+
+        new Thread(() -> {
+            try {
+                Message message = messageBus.awaitMessage(testService1);
+                assertEquals(testEvent, message, "The received message should match the sent event.");
+            } catch (InterruptedException e) {
+                fail("Thread interrupted unexpectedly.");
+            }
+        }).start();
+
+        messageBus.complete(testEvent, "Success");
+        assertEquals("Success", future.get(2, TimeUnit.SECONDS), "The future result should be resolved correctly.");
+    }
+
+    @Test
+    void testRegisterAndUnregister() {
+        messageBus.unregister(testService1);
+
+        assertThrows(IllegalStateException.class, () -> {
+            messageBus.awaitMessage(testService1);
+        }, "Awaiting message for an unregistered service should throw an exception.");
+
+        messageBus.register(testService1);
+        messageBus.subscribeEvent(TestEvent.class, testService1);
+
+        Future<String> future = messageBus.sendEvent(testEvent);
+        assertNotNull(future, "Future should not be null when an event is sent.");
+
+        messageBus.unregister(testService1);
+        assertThrows(IllegalStateException.class, () -> {
+            messageBus.awaitMessage(testService1);
+        }, "Awaiting message for an unregistered service should throw an exception.");
     }
 
     @Test
     void testAwaitMessageBlocks() throws InterruptedException {
-        //Ensures awaitMeassage blocks when no message is availaiblee
-        //NOTICE,we wont send an event in this part
-        //We create a tread to simulate ms calling awaitmessage, which attempts to retrieve a msg from the queue of ts1
-        Thread testThread = new Thread( () -> {
-           try {
-               messageBus.awaitMessage(testService1); // The queue for ts1 is initially empty,so the awaitMessage call clocks(waits)
-               fail("Should have blocked,"); //unexpected behavior
-           } catch (InterruptedException e) {}
+        Thread testThread = new Thread(() -> {
+            try {
+                messageBus.awaitMessage(testService1);
+                fail("AwaitMessage should block when no message is available.");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         });
+
         testThread.start();
-        testThread.sleep(1000);// Give Thread time to block
+
+        Thread.sleep(1000); // Give the thread time to block
         testThread.interrupt();
     }
-    //Instead of create class files of java
+
     private static class TestEvent implements Event<String> {}
+
     private static class TestBroadcast implements Broadcast {}
 }

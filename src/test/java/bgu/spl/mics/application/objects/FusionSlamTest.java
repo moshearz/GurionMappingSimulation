@@ -33,4 +33,32 @@ class FusionSlamTest {
     @Test
     void updateLandMark() {
     }
+
+    @Test
+    void testGetInstance() {
+    }
+
+    @Test
+    void testSetTotalMS() {
+    }
+
+    @Test
+    void testUpdateTotal() {
+    }
+
+    @Test
+    void testGetLandmarks() {
+    }
+
+    @Test
+    void testAddPose() {
+    }
+
+    @Test
+    void addTrackedObject() {
+    }
+
+    @Test
+    void testUpdateLandMark() {
+    }
 }

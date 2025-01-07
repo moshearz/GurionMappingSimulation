@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Represents an object tracked by the LiDAR.
- * This object includes information about the tracked object's ID, description, 
+ * This object includes information about the tracked object's ID, description,
  * time of tracking, and coordinates in the environment.
  */
 public class TrackedObject {
@@ -22,11 +22,19 @@ public class TrackedObject {
         this.coordinates = cloudPoints.getCloudPoints();
     }
 
-    public String getId() { return id; }
+    public String getId() {
+        return id;
+    }
 
-    public int getTime() { return time; }
+    public int getTime() {
+        return time;
+    }
 
-    public String getDescription() { return description; }
+    public String getDescription() {
+        return description;
+    }
 
-    public List<CloudPoint> getCoordinates() { return coordinates;}
+    public List<CloudPoint> getCoordinates() {
+        return coordinates;
+    }
 }

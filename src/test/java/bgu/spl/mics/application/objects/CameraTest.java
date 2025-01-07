@@ -61,15 +61,15 @@ class CameraTest {
 
     @Test
     void getStampedDetectedObjects_ValidTick() {
-        StampedDetectedObjects result = camera.getStampedDetectedObjects(3); // Tick 3, frequency is 2
+        StampedDetectedObjects result = camera.getStampedDetectedObjects(3);
         assertNotNull(result, "Detected objects should not be null for valid tick");
         assertEquals(2, result.getDetectedObjects().size(), "Detected objects list should contain 2 objects");
-        assertEquals("Wall", result.getDetectedObjects().get(0).getDescription(), "First detected object should be 'Person'");
+        assertEquals("Wall", result.getDetectedObjects().get(0).getDescription());
     }
 
     @Test
     void getStampedDetectedObjects_InvalidTick() {
-        StampedDetectedObjects result = camera.getStampedDetectedObjects(1); // Tick 1, not within frequency
+        StampedDetectedObjects result = camera.getStampedDetectedObjects(1);
         assertNull(result, "Detected objects should be null for invalid tick");
     }
 
