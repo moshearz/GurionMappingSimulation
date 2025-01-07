@@ -42,9 +42,37 @@ class CameraServiceUnitTest {
 
         }
 
+    }
 
+    //Test Case: Gets Stamped Detected objects. ( in this test we will use valid and unvalid inputs (input from the json file ofcourse))
+    @Test
+    void testGetsStampedDetectedObjects_ValidTick() {
+        int validTick = 2; // corresponds to a time entry in the "camera_data.json" for "camera1"
+        StampedDetectedObjects res = testCamera.getStampedDetectedObjects(validTick);
+        assertNotNull(res, "Detected Object should not be null for validTick like: " + validTick);
+        assertEquals(1, res.getDetectedObjects().size());
 
     }
+
+    @Test
+    void testGetsStampedDetectedObjects_InvalidTick() {
+        int invalidTick = 3;
+        StampedDetectedObjects res = testCamera.getStampedDetectedObjects(invalidTick);
+        assertNotNull(res, "Detected object should be null for invalidTick like: " + invalidTick);
+    }
+
+    //Test case: cameraService init
+    @Test
+    void cameraServiceInit(){
+        assertNotNull(cameraService,"camera service should be initialized, in this case: camera1, and not be Null");
+        assertEquals("camera1", cameraService.getName());
+    }
+
+
+
+
+
+
 
 
 
