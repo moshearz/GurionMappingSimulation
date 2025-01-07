@@ -69,7 +69,7 @@ public class CameraService extends MicroService {
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
             System.out.println(getName() + " received crash signal.");
             terminate();
-            StatisticalFolder.getInstance().addFinalCameraSnapshot(camera);
+            //StatisticalFolder.getInstance().addFinalCameraSnapshot(camera);
         });
 
         System.out.println(getName() + " initialized.");

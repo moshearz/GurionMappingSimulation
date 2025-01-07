@@ -90,7 +90,7 @@ public class LiDarService extends MicroService {
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
             System.out.println(getName() + " received crash signal.");
             terminate();
-            StatisticalFolder.getInstance().addFinalLidarSnapshot(worker.getLastTrackedObjects());
+            //StatisticalFolder.getInstance().addFinalLidarSnapshot(worker.getLastTrackedObjects());
         });
     }
 

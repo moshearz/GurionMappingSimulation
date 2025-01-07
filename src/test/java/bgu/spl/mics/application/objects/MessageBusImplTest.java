@@ -1,4 +1,4 @@
-package spl.bgu.mics;
+package bgu.spl.mics.application.objects;
 
 import bgu.spl.mics.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +16,7 @@ class MessageBusImplTest {
 
     @BeforeEach
     void setUp() {
-        MessageBus messageBus = MessageBusImpl.getInstance(); //Singelton instance of messageBus
+        messageBus = MessageBusImpl.getInstance(); //Singelton instance of messageBus
         testService1 = new MicroService("TestService1") {
             @Override
             protected void initialize() {} // init method is empty for this test
@@ -36,8 +36,8 @@ class MessageBusImplTest {
         messageBus.unregister(testService2);
 
         // Ensures that calling awaitMessage on an unregistered microservice throws IllegalArgumentException.
-        assertThrows(IllegalArgumentException.class, () -> messageBus.unregister(testService1));
-        assertThrows(IllegalArgumentException.class, () -> messageBus.unregister(testService2));
+        assertThrows(IllegalArgumentException.class, () -> messageBus.awaitMessage(testService1));
+        assertThrows(IllegalArgumentException.class, () -> messageBus.awaitMessage(testService2));
     }
 
     @Test

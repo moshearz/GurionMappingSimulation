@@ -1,14 +1,10 @@
-package spl.bgu.mics.application.objects;
+package bgu.spl.mics.application.objects;
 
 
-import bgu.spl.mics.application.objects.FusionSlam;
-import bgu.spl.mics.application.objects.LandMark;
-import bgu.spl.mics.application.objects.Pose;
-import bgu.spl.mics.application.objects.TrackedObject;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.Reader;
 import java.nio.file.Files;
