@@ -12,13 +12,13 @@ import java.util.concurrent.*;
  */
 public class MessageBusImpl implements MessageBus {
 
-	// Separate maps for Event and Broadcast subscriptions
-	//map for Event. f we use round-robin indices to implement round-robin behavior, the eventSubscriptions field must be a List and not a Queue.
+	//Separate maps for Event and Broadcast subscriptions
+	//map for Event. we use round-robin indices to implement round-robin behavior, the eventSubscriptions field must be a List and not a Queue.
 	//Because A List allows direct access to elements using their index and this is necessary for implementing round-robin via an external field like roundRobinIndices
 	// (A Queue operates on a FIFO (First-In-First-Out) principle.)
 	private final Map<Class<? extends Event>, List<MicroService>> eventSubscriptions;
 
-	//map for Broadcast
+	//map for Broadcast // blocking quee or concurrentqueue
 	private final Map<Class<? extends Broadcast>, List<MicroService>> broadcastSubscriptions;
 
 	// Mapping from each MicroService to its own message queue

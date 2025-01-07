@@ -47,7 +47,7 @@ public class CameraService extends MicroService {
                 StampedDetectedObjects stampedDetectedObjects = camera.getStampedDetectedObjects(tick.getTick() - camera.getFrequency());
                 if (stampedDetectedObjects != null) {
                     for (DetectedObject detectedObject : stampedDetectedObjects.getDetectedObjects()) {
-                        if (Objects.equals(detectedObject.getDescription(), "ERROR")) {
+                        if (Objects.equals(detectedObject.getId(), "ERROR")) {
                             sendBroadcast(new CrashedBroadcast("camera" + camera.getId()));
                             camera.setStatus(STATUS.ERROR);
                             terminate();

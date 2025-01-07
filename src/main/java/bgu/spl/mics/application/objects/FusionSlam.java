@@ -71,4 +71,6 @@ public class FusionSlam {
         private static final FusionSlam instance = new FusionSlam();
     }
 
+    public List<LandMark> getLandmarks() { return landmarks; }
+
 }
