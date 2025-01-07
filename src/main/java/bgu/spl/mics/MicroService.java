@@ -103,7 +103,7 @@ public abstract class MicroService implements Runnable {
      * @param <T>       The type of the expected result of the request
      *                  {@code e}
      * @param e         The event to send
-     * @return  		{@link Future<T>} object that may be resolved later by a different
+     * @return          {@link Future<T>} object that may be resolved later by a different
      *         			micro-service processing this event.
      * 	       			null in case no micro-service has subscribed to {@code e.getClass()}.
      */
@@ -163,6 +163,7 @@ public abstract class MicroService implements Runnable {
         initialize();
         while (!terminated) {
             try {
+                //System.out.println(getName() + " in loop");
                 Message msg = messageBus.awaitMessage(this); // Wait for the next message and retrieve the next message
                 //Find and Execute the callback
                 @SuppressWarnings("unchecked")
@@ -171,6 +172,7 @@ public abstract class MicroService implements Runnable {
                     callback.call(msg);
                 else
                     System.err.println("No callback found for message type: " + msg.getClass().getName());
+                //System.out.println(getName() + " end loop");
             }catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

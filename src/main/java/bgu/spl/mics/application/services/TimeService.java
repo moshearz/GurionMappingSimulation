@@ -3,6 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.objects.StatisticalFolder;
 import com.google.gson.reflect.TypeToken;
 import java.util.concurrent.TimeUnit;
 
@@ -27,13 +28,14 @@ public class TimeService extends MicroService {
         this.Duration = Duration;
     }
 
-    public void tickWait() {
+    public synchronized void tickWait() {
         long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime);
         while (System.currentTimeMillis() < endTime) {
             try {
                 this.wait(endTime - System.currentTimeMillis());
             } catch (InterruptedException ignored) {}
         }
+        StatisticalFolder.getInstance().updateSystemRuntimeTotal();
     }
 
     /**
@@ -60,5 +62,7 @@ public class TimeService extends MicroService {
         });
         tickWait();
         sendBroadcast(new TickBroadcast(1));
+
+        //System.out.println(getName() + " initialized.");
     }
 }

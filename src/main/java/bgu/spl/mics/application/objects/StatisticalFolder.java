@@ -28,18 +28,22 @@ public class StatisticalFolder {
 
     public synchronized void updateSystemRuntimeTotal() {
         systemRuntime++;
+        System.out.println("total run time: " + systemRuntime);
     }
 
     public synchronized void updateDetectedObjectsTotal(int num) {
         numDetectedObjects += num;
+        System.out.println("total detected objects: " + numDetectedObjects);
     }
 
     public synchronized void updateTrackedObjectsTotal(int num) {
         numTrackedObjects += num;
+        System.out.println("total tracked objects: " + numTrackedObjects);
     }
 
     public synchronized void updateLandmarksTotal() {
         numLandmarks++;
+        System.out.println("total landmarks: " + numLandmarks);
     }
 
     public void setLandMarks(List<LandMark> landMarks) {

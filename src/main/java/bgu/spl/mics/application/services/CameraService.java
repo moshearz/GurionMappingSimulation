@@ -45,16 +45,17 @@ public class CameraService extends MicroService {
                 sendBroadcast(new TerminatedBroadcast(new TypeToken<CameraService>() {}.getType()));
             } else {
                 StampedDetectedObjects stampedDetectedObjects = camera.getStampedDetectedObjects(tick.getTick());
-                for (DetectedObject detectedObject : stampedDetectedObjects.getDetectedObjects()) {
-                    if (Objects.equals(detectedObject.getId(), "ERROR")) {
-                        camera.setStatus(STATUS.ERROR);
-                        terminate();
-                        CrashReport.getInstance().addLastCameraFrame("Camera " + camera.getId(), camera.getLastDetectedObjects());
-                        sendBroadcast(new CrashedBroadcast(detectedObject.getDescription(), detectedObject.getId()));
-                        break;
+                try {
+                    for (DetectedObject detectedObject : stampedDetectedObjects.getDetectedObjects()) {
+                        if (Objects.equals(detectedObject.getId(), "ERROR")) {
+                            camera.setStatus(STATUS.ERROR);
+                            terminate();
+                            CrashReport.getInstance().addLastCameraFrame("Camera " + camera.getId(), camera.getLastDetectedObjects());
+                            sendBroadcast(new CrashedBroadcast(detectedObject.getDescription(), detectedObject.getId()));
+                        }
                     }
-                }
-                if (camera.getStatus() == STATUS.UP) {
+                } catch (NullPointerException ignored) {}
+                if (camera.getStatus() == STATUS.UP & stampedDetectedObjects != null) {
                     StatisticalFolder.getInstance().updateDetectedObjectsTotal(stampedDetectedObjects.size());
                     sendEvent(new DetectObjectsEvent(stampedDetectedObjects));
                 }
@@ -75,7 +76,6 @@ public class CameraService extends MicroService {
             sendBroadcast(new CrashedBroadcast(instance.getErrorMessage(), instance.getFaultySensor()));
         });
 
-        System.out.println(getName() + " initialized.");
-
+        //System.out.println(getName() + " initialized.");
     }
 }

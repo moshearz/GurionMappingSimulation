@@ -80,7 +80,6 @@ public class FusionSlam {
             for (LandMark selected : landmarks) {
                 if (Objects.equals(selected.getId(), object.getId())) {
                     currentLandMark = selected;
-                    break;
                 }
             }
             if (currentLandMark == null) { // When object with specific ID doesn't exist

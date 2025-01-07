@@ -56,5 +56,6 @@ public class PoseService extends MicroService {
             terminate();
             CrashReport.getInstance().setPoses(gpsimu.getPoseList().subList(0, gpsimu.getCurrentTick()));
         });
+
     }
 }

@@ -88,17 +88,23 @@ public class GurionRockRunner {
             StatisticalFolder stats = StatisticalFolder.getInstance();
 
             for (CameraService microService : cameraServiceList) {
-                microService.run();
+                Thread thread = new Thread(microService, microService.getName());
+                thread.start();
             }
             for (LiDarService microService : liDarWorkerTrackerList) {
-                microService.run();
+                Thread thread = new Thread(microService, microService.getName());
+                thread.start();
             }
-            poseService.run();
-            fusionSlamService.run();
+            Thread poseMC = new Thread(poseService, "PoseMicroService");
+            poseMC.start();
+            Thread fusionSLAM = new Thread(fusionSlamService, "FusionSLAMService");
+            fusionSLAM.start();
 
             FusionSlam.getInstance().setTotalMS(cameraServiceList.size() + liDarWorkerTrackerList.size());
 
-            globalClock.run();
+            Thread globalClockMC = new Thread(globalClock, "TickMicroService");
+            globalClockMC.start();
+            //System.out.println("test");
 
         } catch (IOException e) {
             e.printStackTrace();
