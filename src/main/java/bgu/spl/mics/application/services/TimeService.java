@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class TimeService extends MicroService {
 
     private final int TickTime;
-    private int Duration;
+    private final int Duration;
 
     /**
      * Constructor for TimeService.
@@ -28,6 +28,15 @@ public class TimeService extends MicroService {
         this.Duration = Duration;
     }
 
+    public void tickWait() {
+        long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime);
+        while (System.currentTimeMillis() < endTime) {
+            try {
+                this.wait(endTime - System.currentTimeMillis());
+            } catch (InterruptedException ignored) {}
+        }
+    }
+
     /**
      * Initializes the TimeService.
      * Starts broadcasting TickBroadcast messages and terminates after the specified duration.
@@ -36,27 +45,21 @@ public class TimeService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TerminatedBroadcast.class, termination -> {
             if (termination.getMicroServiceType() == new TypeToken<FusionSlamService>() {}.getType()) {
-                Duration = -1; // Meaning the loop will end
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(TimeService.class));
             }
         });
 
         subscribeBroadcast(TickBroadcast.class, tick -> {
             if (tick.getTick() <= Duration) {
-                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TickTime);
-                while (System.currentTimeMillis() < endTime) {
-                    try {
-                        this.wait(endTime - System.currentTimeMillis());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
+                tickWait();
                 sendBroadcast(new TickBroadcast(tick.getTick() + 1));
             } else {
                 terminate();
                 sendBroadcast(new TerminatedBroadcast(TimeService.class));
             }
         });
-
+        tickWait();
         sendBroadcast(new TickBroadcast(1));
     }
 }

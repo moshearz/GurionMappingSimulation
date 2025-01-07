@@ -1,7 +1,8 @@
 package bgu.spl.mics.application.objects;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Holds statistical information about the system's operation.
@@ -14,7 +15,7 @@ public class StatisticalFolder {
     private int numDetectedObjects = 0;
     private int numTrackedObjects = 0;
     private int numLandmarks = 0;
-    private List<LandMark> landMarks;
+    private Map<String, LandMark> landMarks = new HashMap<>();
 
     private StatisticalFolder() {}
 
@@ -25,24 +26,26 @@ public class StatisticalFolder {
         return instance;
     }
 
-    public void updateSystemRuntimeTotal() {
+    public synchronized void updateSystemRuntimeTotal() {
         systemRuntime++;
     }
 
-    public void updateDetectedObjectsTotal(int num) {
+    public synchronized void updateDetectedObjectsTotal(int num) {
         numDetectedObjects += num;
     }
 
-    public void updateTrackedObjectsTotal(int num) {
+    public synchronized void updateTrackedObjectsTotal(int num) {
         numTrackedObjects += num;
     }
 
-    public void updateLandmarksTotal() {
+    public synchronized void updateLandmarksTotal() {
         numLandmarks++;
     }
 
     public void setLandMarks(List<LandMark> landMarks) {
-        this.landMarks = landMarks;
+        for (LandMark landMark : landMarks) {
+            this.landMarks.put(landMark.getId(), landMark);
+        }
     }
 
     // Used for testing

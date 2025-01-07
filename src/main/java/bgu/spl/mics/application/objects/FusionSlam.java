@@ -2,6 +2,7 @@ package bgu.spl.mics.application.objects;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -11,11 +12,13 @@ import java.util.Objects;
  * Implements the Singleton pattern to ensure a single instance of FusionSlam exists.
  */
 public class FusionSlam {
-    private List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
-    private List<Pose> poses = new ArrayList<>(); // List of Robot locations for calculations
-    private int totalMicroServices;
+    private final List<LandMark> landmarks = new ArrayList<>(); // List of landmark on the map
+    private final List<Pose> poses = new ArrayList<>();
+    private final List<TrackedObject> waitingList = new ArrayList<>();
 
+    private int totalMicroServices;
     private final Object Lock_landmarks = new Object();
+    private final Object Lock_Poses_WaitingList = new Object();
 
     private FusionSlam() {}
 
@@ -36,46 +39,55 @@ public class FusionSlam {
     }
 
     public void addPose(Pose pose) {
-        poses.add(pose);
-    }
-
-    public Boolean poseExist(int tickTime) {
-        for (Pose pose : poses) {
-            if (pose.getTime() == tickTime) {
-                return true;
+        synchronized (Lock_Poses_WaitingList) {
+            List<TrackedObject> waitingListCopy = new ArrayList<>(waitingList);
+            for (TrackedObject trackedObject : waitingListCopy) {
+                if (trackedObject.getTime() == pose.getTime()) {
+                    if (waitingList.remove(trackedObject)) {
+                        updateLandMark(trackedObject, pose);
+                    }
+                }
             }
+            poses.add(pose);
         }
-        return false;
     }
 
-    // Function is called only when the needed pose is saved
-    public void updateLandMark(TrackedObject object) {
-        for (Pose currentPose : poses) {
-            if (currentPose.getTime() == object.getTime()) {
-                double sin = Math.sin(Math.toRadians(currentPose.getYaw()));
-                double cos = Math.cos(Math.toRadians(currentPose.getYaw()));
-                List<CloudPoint> additionalData = new ArrayList<>();
-                for (CloudPoint cloudPoint : object.getCoordinates()) {
-                    additionalData.add(new CloudPoint(
-                            cos * cloudPoint.getX() - sin * cloudPoint.getY() + currentPose.getX()
-                            ,sin * cloudPoint.getX() - cos * cloudPoint.getY() + currentPose.getY())
-                    );
+    public void addTrackedObject(TrackedObject trackedObject) {
+        synchronized (Lock_Poses_WaitingList) {
+            for (Pose pose : poses) {
+                if (pose.getTime() == trackedObject.getTime()) {
+                    updateLandMark(trackedObject, pose);
+                    return;
                 }
-                LandMark currentLandMark = null;
-                synchronized (Lock_landmarks) {
-                    for (LandMark selected : landmarks) {
-                        if (Objects.equals(selected.getId(), object.getId())) {
-                            currentLandMark = selected;
-                            break;
-                        }
-                    }
-                    if (currentLandMark == null) { // When object with specific ID doesn't exist
-                        landmarks.add( new LandMark(object.getId(), object.getDescription(), additionalData));
-                        StatisticalFolder.getInstance().updateLandmarksTotal();
-                    } else { // When the object exists and needs to update the CloudPoints
-                        currentLandMark.updateCoordinates(additionalData);
-                    }
+            }
+            waitingList.add(trackedObject);
+        }
+    }
+
+    // Function is called only when both trackedObject and Pose are present
+    public void updateLandMark(TrackedObject object, Pose pose) {
+        double sin = Math.sin(Math.toRadians(pose.getYaw()));
+        double cos = Math.cos(Math.toRadians(pose.getYaw()));
+        List<CloudPoint> additionalData = new ArrayList<>();
+        for (CloudPoint cloudPoint : object.getCoordinates()) {
+            additionalData.add(new CloudPoint(
+                    cos * cloudPoint.getX() - sin * cloudPoint.getY() + pose.getX()
+                    ,sin * cloudPoint.getX() - cos * cloudPoint.getY() + pose.getY())
+            );
+        }
+        LandMark currentLandMark = null;
+        synchronized (Lock_landmarks) {
+            for (LandMark selected : landmarks) {
+                if (Objects.equals(selected.getId(), object.getId())) {
+                    currentLandMark = selected;
+                    break;
                 }
+            }
+            if (currentLandMark == null) { // When object with specific ID doesn't exist
+                landmarks.add( new LandMark(object.getId(), object.getDescription(), additionalData));
+                StatisticalFolder.getInstance().updateLandmarksTotal();
+            } else { // When the object exists and needs to update the CloudPoints
+                currentLandMark.updateCoordinates(additionalData);
             }
         }
     }

@@ -5,8 +5,10 @@ import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.PoseEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
+import bgu.spl.mics.application.objects.CrashReport;
 import bgu.spl.mics.application.objects.GPSIMU;
 import bgu.spl.mics.application.objects.Pose;
+import bgu.spl.mics.application.objects.STATUS;
 import com.google.gson.reflect.TypeToken;
 
 /**
@@ -33,21 +35,27 @@ public class PoseService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, tick ->{
-            Pose currPose = gpsimu.getCurrentPose(tick.getTick());
+            Pose currPose = gpsimu.getCurrentPose(gpsimu.updateCurrentTick());
             if (currPose != null) {
                 sendEvent(new PoseEvent(currPose));
+            } else {
+                gpsimu.setStatus(STATUS.DOWN);
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(new TypeToken<PoseService>() {}.getType()));
             }
         });
 
         subscribeBroadcast(TerminatedBroadcast.class, termination -> {
             if (termination.getMicroServiceType() == new TypeToken<TimeService>() {}.getType()) {
                 terminate();
+                sendBroadcast(new TerminatedBroadcast(new TypeToken<PoseService>() {}.getType()));
             }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crash -> {
             System.out.println(getName() + " received crash signal.");
             terminate();
+            CrashReport.getInstance().setPoses(gpsimu.getPoseList().subList(0, gpsimu.getCurrentTick()));
         });
     }
 }
