@@ -28,10 +28,7 @@ public class Future<T> {
 			while (!status) {
 				try {
 					lock.wait();
-				} catch (InterruptedException e) {
-					// Restore the interrupted status
-					Thread.currentThread().interrupt();
-				}
+				} catch (InterruptedException e) {}
 			}
 			return result;
 		}
@@ -79,9 +76,7 @@ public class Future<T> {
 			while (!status && timeLeft > 0) {
 				try {
 					lock.wait(timeLeft);
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
+				} catch (InterruptedException e){}
 				timeLeft = endTime  - System.currentTimeMillis();
 			}
 

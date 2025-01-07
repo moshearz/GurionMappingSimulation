@@ -3,14 +3,14 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
-import bgu.spl.mics.application.objects.FusionSlam;
-import bgu.spl.mics.application.objects.StatisticalFolder;
-import bgu.spl.mics.application.objects.TrackedObject;
+import bgu.spl.mics.application.objects.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FusionSlamService extends MicroService {
     private final FusionSlam instance;
-    private final Map<Integer ,Future<PoseEvent>> timedPoses = new ConcurrentHashMap<>();
+
     /**
      * Constructor for FusionSlamService.
      *
@@ -42,20 +42,13 @@ public class FusionSlamService extends MicroService {
     @Override
     protected void initialize() {
         subscribeEvent(TrackedObjectsEvent.class, objectsEvent -> {
-            // Sets up a Future Pose matching the tick time of the TrackedObjects
-            Future<PoseEvent> poseFuture = new Future<>();
-            timedPoses.put(objectsEvent.getTrackedTickTime(), poseFuture);
-            poseFuture.get();
-
-            for (TrackedObject object : objectsEvent.getTrackedObjects()) {
-                instance.updateLandMark(object);
+            for (TrackedObject trackedObject : objectsEvent.getTrackedObjects()) {
+                instance.addTrackedObject(trackedObject);
             }
         });
 
         subscribeEvent(PoseEvent.class, poseEvent -> {
             instance.addPose(poseEvent.getCurrPose());
-            complete(poseEvent, poseEvent.getCurrPose());
-            timedPoses.get(poseEvent.getCurrPose().getTime()).resolve(poseEvent);
         });
 
         subscribeBroadcast(TerminatedBroadcast.class, termination -> {
@@ -69,12 +62,14 @@ public class FusionSlamService extends MicroService {
                     e.printStackTrace();
                 }
                 terminate();
-                sendBroadcast(new TerminatedBroadcast(this.getClass()));
+                //sendBroadcast(new TerminatedBroadcast(this.getClass()));
             }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
 
         });
+
+
     }
 }

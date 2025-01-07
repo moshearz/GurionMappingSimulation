@@ -141,6 +141,7 @@ public abstract class MicroService implements Runnable {
      * message.
      */
     protected final void terminate() {
+        messageBus.unregister(this); // Unregister the MicroService from the MessageBus before exiting
         this.terminated = true;
     }
 
@@ -174,7 +175,6 @@ public abstract class MicroService implements Runnable {
                 Thread.currentThread().interrupt();
             }
         }
-        messageBus.unregister(this); // Unregister the MicroService from the MessageBus before exiting
     }
 
 }

@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.messages;
 
 import bgu.spl.mics.Broadcast;
+import bgu.spl.mics.application.objects.CrashReport;
 
 /**
  * (Represents a broadcast message) sent by:  all the sensors (broadcast message sent by a sensor to notify other services)
@@ -8,11 +9,9 @@ import bgu.spl.mics.Broadcast;
  */
 public class CrashedBroadcast implements Broadcast {
 
-    private final String error;
-    private final String faultySensor;
-
     public CrashedBroadcast(String error, String faultySensor) {
-        this.error = error;
-        this.faultySensor = faultySensor;
+        CrashReport crash = CrashReport.getInstance();
+        crash.setErrorMessage(error);
+        crash.setFaultySensor(faultySensor);
     }
 }
