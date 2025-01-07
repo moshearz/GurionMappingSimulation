@@ -38,13 +38,13 @@ public class GurionRockRunner {
 
             JsonObject CamerasJSON = root.getAsJsonObject("Cameras");
             JsonArray CamerasConfigurationsJSON = CamerasJSON.getAsJsonArray("CamerasConfigurations");
-            String cameraDataPathJSON = CamerasJSON.getAsJsonObject("camera_datas_path").getAsString();
+            String cameraDataPathJSON = CamerasJSON.getAsJsonPrimitive("camera_datas_path").getAsString();
             Path CameraDataPath = Paths.get(args[0]).toAbsolutePath().normalize().getParent().resolve(cameraDataPathJSON).normalize();
             List<CameraService> cameraServiceList = new ArrayList<>();
             try (FileReader camReader = new FileReader(CameraDataPath.toString())) {
                 JsonObject cameraRoot = JsonParser.parseReader(camReader).getAsJsonObject();
                 for (int i = 1; i <= CamerasConfigurationsJSON.size(); i++) {
-                    JsonObject camera_i = cameraRoot.getAsJsonObject("camera" + i);
+                    JsonArray camera_i = cameraRoot.getAsJsonArray("camera" + i);
                     cameraServiceList.add(new CameraService(new Camera(
                             CamerasConfigurationsJSON.get(i - 1).getAsJsonObject().get("id").getAsInt(),
                             CamerasConfigurationsJSON.get(i - 1).getAsJsonObject().get("frequency").getAsInt(),
@@ -53,9 +53,9 @@ public class GurionRockRunner {
                 }
             }
 
-            JsonObject LidarWorkersJSON = root.getAsJsonObject("LidarWorkers");
+            JsonObject LidarWorkersJSON = root.getAsJsonObject("LiDarWorkers");
             JsonArray LidarConfigurationsJSON = LidarWorkersJSON.getAsJsonArray("LidarConfigurations");
-            String lidarDataPathJSON = LidarWorkersJSON.getAsJsonObject("lidars_data_path").getAsString();
+            String lidarDataPathJSON = LidarWorkersJSON.getAsJsonPrimitive("lidars_data_path").getAsString();
             List<LiDarService> liDarWorkerTrackerList = new ArrayList<>();
             for (int i = 0; i < LidarConfigurationsJSON.size(); i++) {
                 liDarWorkerTrackerList.add(new LiDarService(new LiDarWorkerTracker(
@@ -73,12 +73,12 @@ public class GurionRockRunner {
             LiDarDataBase lidarDB = LiDarDataBase.getInstance();
             lidarDB.setDataBase(cloudPointList);
 
-            String poseJsonFile = root.getAsJsonObject("poseJsonFile").getAsString();
+            String poseJsonFile = root.getAsJsonPrimitive("poseJsonFile").getAsString();
             Path PoseDataPath = Paths.get(args[0]).toAbsolutePath().normalize().getParent().resolve(poseJsonFile).normalize();
             PoseService poseService = new PoseService(new GPSIMU(PoseDataPath.toString()));
 
-            int TickTime = root.getAsJsonObject("TickTime").getAsInt();
-            int Duration = root.getAsJsonObject("Duration").getAsInt();
+            int TickTime = root.getAsJsonPrimitive("TickTime").getAsInt();
+            int Duration = root.getAsJsonPrimitive("Duration").getAsInt();
             TimeService globalClock = new TimeService(TickTime, Duration);
 
             FusionSlamService fusionSlamService = new FusionSlamService(FusionSlam.getInstance());

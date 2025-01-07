@@ -62,12 +62,23 @@ public class FusionSlamService extends MicroService {
                     e.printStackTrace();
                 }
                 terminate();
-                //sendBroadcast(new TerminatedBroadcast(this.getClass()));
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
             }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
-
+            if (instance.updateTotal()) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                StatisticalFolder.getInstance().setLandMarks(instance.getLandmarks());
+                String jsonString = gson.toJson(CrashReport.getInstance());
+                try (FileWriter writer = new FileWriter("src/main/java/bgu/spl/mics/application/error_output.json")) {
+                    gson.toJson(CrashReport.getInstance(), writer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
+            }
         });
 
 

@@ -70,7 +70,7 @@ public class MessageBusImpl implements MessageBus {
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		// Use of ConcurrentHashMap's merge function which is an atomic thread-safe function
 		// merge tries to add a new event type to the map if it doesn't exist yet, otherwise using the built-in biFunction m gets added to the already existing list
-		broadcastSubscriptions.merge(type, new ArrayList<>(), (existingList, placeHolder) -> {
+		broadcastSubscriptions.merge(type, new CopyOnWriteArrayList<>(), (existingList, placeHolder) -> {
 			existingList.add(m);
 			return existingList;
 		});

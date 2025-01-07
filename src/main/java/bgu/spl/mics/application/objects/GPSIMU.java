@@ -19,9 +19,11 @@ public class GPSIMU {
     public GPSIMU(String filePath) {
         try (JsonReader reader = new JsonReader(new FileReader(filePath))) {
             Gson gson = new Gson();
+            reader.beginArray();
             while (reader.hasNext()) {
                 poseList.add(gson.fromJson(reader, Pose.class));
             }
+            reader.endArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

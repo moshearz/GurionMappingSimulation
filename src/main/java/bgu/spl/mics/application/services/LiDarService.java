@@ -45,31 +45,23 @@ public class LiDarService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, tick -> {
-
+            List<TrackedObject> trackedObjectList = worker.readyTrackedList(tick.getTick());
+            while (trackedObjectList != null) {
+                StatisticalFolder.getInstance().updateTrackedObjectsTotal(trackedObjectList.size());
+                sendEvent(new TrackedObjectsEvent(trackedObjectList));
+                trackedObjectList = worker.readyTrackedList(tick.getTick());
+            }
+            if (worker.getStatus() == STATUS.ERROR) {
+                terminate();
+                sendBroadcast(new CrashedBroadcast("LiDarTrackerWorker " + worker.getId() + " disconnected", "LiDarTrackerWorker " + worker.getId()));
+            } else if (worker.getStatus() == STATUS.DOWN) {
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(new TypeToken<LiDarService>() {}.getType()));
+            }
         });
-// detectevent saves to a list in worker while tickbroadcast checks when to send trackedevent
 
         subscribeEvent(DetectObjectsEvent.class, event -> {
             worker.addDetectedObject(event.getStampedDetectedObjects());
-        });
-
-        subscribeEvent(DetectObjectsEvent.class, event -> {
-            if (worker.getTick() < event.getStampedDetectedObjects().getTime() + worker.getFrequency()) {
-                sendEvent(event);
-            } else {
-                List<TrackedObject> trackedObjectsList = worker.trackObjects(event.getStampedDetectedObjects());
-                if (worker.getStatus() == STATUS.ERROR) {
-                    terminate();
-                    CrashReport.getInstance().addLastLidarFrames("LiDarTrackerWorker " + worker.getId(), worker.getLastTrackedObjects());
-                    sendBroadcast(new CrashedBroadcast("LiDarTrackerWorker " + worker.getId() + " disconnected", "LiDarTrackerWorker " + worker.getId()));
-                } else if (worker.getStatus() == STATUS.UP) {
-                    StatisticalFolder.getInstance().updateTrackedObjectsTotal(trackedObjectsList.size());
-                    sendEvent(new TrackedObjectsEvent(trackedObjectsList));
-                } else { // STATUS.DOWN
-                    terminate();
-                    sendBroadcast(new TerminatedBroadcast(new TypeToken<LiDarService>() {}.getType()));
-                }
-            }
         });
 
         // Subscribe to TerminatedBroadcast
@@ -82,9 +74,10 @@ public class LiDarService extends MicroService {
 
         // Subscribe to CrashedBroadcast
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
-            System.out.println(getName() + " received crash signal.");
             terminate();
-            CrashReport.getInstance().addLastLidarFrames("LiDarTrackerWorker " + worker.getId(), worker.getLastTrackedObjects());
+            CrashReport instance = CrashReport.getInstance();
+            instance.addLastLidarFrames("LiDarTrackerWorker " + worker.getId(), worker.getLastTrackedObjects());
+            sendBroadcast(new CrashedBroadcast(instance.getErrorMessage(), instance.getFaultySensor()));
         });
     }
 

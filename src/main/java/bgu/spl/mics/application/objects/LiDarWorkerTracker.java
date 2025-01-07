@@ -17,7 +17,6 @@ public class LiDarWorkerTracker {
     private STATUS status = STATUS.UP;
     private final List<StampedDetectedObjects> waitingList = new ArrayList<>();
     private List<TrackedObject> lastTrackedObjects = new ArrayList<>();
-    private int tick = 0;
 
     public LiDarWorkerTracker(int id, int frequency) {
         this.id = id;
@@ -28,28 +27,30 @@ public class LiDarWorkerTracker {
         return id;
     }
 
-    public final int getFrequency() {
-        return frequency;
-    }
-
     public STATUS getStatus() {
         return status;
-    }
-
-    public int getTick() {
-        return tick;
     }
 
     public List<TrackedObject> getLastTrackedObjects() {
         return lastTrackedObjects;
     }
 
-    public void updateTick() {
-        tick++;
-    }
-
     public void addDetectedObject(StampedDetectedObjects stampedDetectedObjects) {
         waitingList.add(stampedDetectedObjects);
+    }
+
+    public List<TrackedObject> readyTrackedList(int tick) {
+        for (StampedDetectedObjects stampedDetectedObjects : waitingList) {
+            if (stampedDetectedObjects.getTime() + frequency <= tick) {
+                List<TrackedObject> trackedObjectList = trackObjects(stampedDetectedObjects);
+                if (status == STATUS.ERROR) {
+                    return null;
+                }
+                waitingList.remove(stampedDetectedObjects);
+                return trackedObjectList;
+            }
+        }
+        return null;
     }
 
     public List<TrackedObject> trackObjects(StampedDetectedObjects stampedDetectedObjects) {
@@ -58,6 +59,7 @@ public class LiDarWorkerTracker {
             StampedCloudPoints matchingCloudPoints = LiDarDataBase.getInstance().getStampedCloudPoints(detectedObject, stampedDetectedObjects.getTime());
             if (Objects.equals(matchingCloudPoints.getId(), "ERROR")) {
                 status = STATUS.ERROR;
+                CrashReport.getInstance().addLastLidarFrames("LiDarTrackerWorker " + getId(), lastTrackedObjects);
                 break;
             } else {
                 trackedObjectList.add(new TrackedObject(detectedObject, matchingCloudPoints));
