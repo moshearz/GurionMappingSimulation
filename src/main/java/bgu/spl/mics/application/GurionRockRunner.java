@@ -5,6 +5,7 @@ import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.*;
 import com.google.gson.*;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -81,7 +82,7 @@ public class GurionRockRunner {
             int Duration = root.getAsJsonPrimitive("Duration").getAsInt();
             TimeService globalClock = new TimeService(TickTime, Duration);
 
-            FusionSlamService fusionSlamService = new FusionSlamService(FusionSlam.getInstance());
+            FusionSlamService fusionSlamService = new FusionSlamService(FusionSlam.getInstance(), args[0]);
 
             MessageBusImpl simulation = MessageBusImpl.getInstance();
 
