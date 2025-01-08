@@ -39,8 +39,8 @@ public class PoseService extends MicroService {
             if (currPose != null) {
                 sendEvent(new PoseEvent(currPose));
             } else {
-                gpsimu.setStatus(STATUS.DOWN);
                 terminate();
+                gpsimu.setStatus(STATUS.DOWN);
                 sendBroadcast(new TerminatedBroadcast(new TypeToken<PoseService>() {}.getType()));
             }
         });
@@ -53,8 +53,8 @@ public class PoseService extends MicroService {
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crash -> {
-            terminate();
             CrashReport.getInstance().setPoses(gpsimu.getPoseList().subList(0, gpsimu.getCurrentTick()));
+            terminate();
         });
 
     }

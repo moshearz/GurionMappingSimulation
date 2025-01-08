@@ -1,7 +1,5 @@
 package bgu.spl.mics.application.objects;
 
-import bgu.spl.mics.application.services.LiDarService;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -60,7 +58,6 @@ public class LiDarWorkerTracker {
             if (Objects.equals(matchingCloudPoints.getId(), "ERROR")) {
                 status = STATUS.ERROR;
                 CrashReport.getInstance().addLastLidarFrames("LiDarTrackerWorker " + getId(), lastTrackedObjects);
-                break;
             } else {
                 trackedObjectList.add(new TrackedObject(detectedObject, matchingCloudPoints));
             }

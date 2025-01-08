@@ -40,21 +40,15 @@ public class CameraService extends MicroService {
         // First type of msg - TickBroadcast: Tracks system ticks and determines when to perform object detection
         subscribeBroadcast(TickBroadcast.class, tick -> {
             if (camera.isEmpty()) {
-                camera.setStatus(STATUS.DOWN);
                 terminate();
+                camera.setStatus(STATUS.DOWN);
                 sendBroadcast(new TerminatedBroadcast(new TypeToken<CameraService>() {}.getType()));
             } else {
                 StampedDetectedObjects stampedDetectedObjects = camera.getStampedDetectedObjects(tick.getTick());
-                try {
-                    for (DetectedObject detectedObject : stampedDetectedObjects.getDetectedObjects()) {
-                        if (Objects.equals(detectedObject.getId(), "ERROR")) {
-                            camera.setStatus(STATUS.ERROR);
-                            terminate();
-                            CrashReport.getInstance().addLastCameraFrame("Camera " + camera.getId(), camera.getLastDetectedObjects());
-                            sendBroadcast(new CrashedBroadcast(detectedObject.getDescription(), detectedObject.getId()));
-                        }
-                    }
-                } catch (NullPointerException ignored) {}
+                if (camera.getStatus() == STATUS.ERROR) {
+                    terminate();
+                    sendBroadcast(new CrashedBroadcast(stampedDetectedObjects.getDetectedObjects().get(0).getDescription(), "Camera " + camera.getId()));
+                }
                 if (camera.getStatus() == STATUS.UP & stampedDetectedObjects != null) {
                     StatisticalFolder.getInstance().updateDetectedObjectsTotal(stampedDetectedObjects.size());
                     sendEvent(new DetectObjectsEvent(stampedDetectedObjects));
@@ -64,18 +58,16 @@ public class CameraService extends MicroService {
 
         subscribeBroadcast(TerminatedBroadcast.class, termination -> {
             if (termination.getMicroServiceType() == new TypeToken<TimeService>() {}.getType()) {
-                terminate();
                 sendBroadcast(new TerminatedBroadcast(new TypeToken<CameraService>() {}.getType()));
+                terminate();
             }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
-            terminate();
             CrashReport instance = CrashReport.getInstance();
             instance.addLastCameraFrame("Camera " + camera.getId(), camera.getLastDetectedObjects());
             sendBroadcast(new CrashedBroadcast(instance.getErrorMessage(), instance.getFaultySensor()));
+            terminate();
         });
-
-        //System.out.println(getName() + " initialized.");
     }
 }

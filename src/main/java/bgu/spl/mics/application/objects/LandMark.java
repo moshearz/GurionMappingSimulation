@@ -40,6 +40,7 @@ public class LandMark {
         }
         if (newList.size() > minSize) {
             for (int i = minSize; i < newList.size(); i++) {
+                System.out.println(Thread.currentThread().getName() + " has added the landmark " + newList.get(i));
                 coordinates.add(newList.get(i));
             }
         }

@@ -1,18 +1,15 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.objects.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -23,15 +20,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FusionSlamService extends MicroService {
     private final FusionSlam instance;
+    private final File filePath;
 
     /**
      * Constructor for FusionSlamService.
      *
      * @param fusionSlam The FusionSLAM object responsible for managing the global map.
      */
-    public FusionSlamService(FusionSlam fusionSlam) {
+    public FusionSlamService(FusionSlam fusionSlam, String filePath) {
         super("Fusion-SLAM");
         instance = fusionSlam;
+        this.filePath = new File(filePath);
     }
 
     /**
@@ -53,34 +52,37 @@ public class FusionSlamService extends MicroService {
 
         subscribeBroadcast(TerminatedBroadcast.class, termination -> {
             if (instance.updateTotal()) {
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 StatisticalFolder.getInstance().setLandMarks(instance.getLandmarks());
                 String jsonString = gson.toJson(StatisticalFolder.getInstance());
-                try (FileWriter writer = new FileWriter("src/main/java/bgu/spl/mics/application/output_file.json")) {
+                try (FileWriter writer = new FileWriter(new File(filePath.getParent(),"output_file.json"))) {
                     gson.toJson(StatisticalFolder.getInstance(), writer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                terminate();
-                sendBroadcast(new TerminatedBroadcast(this.getClass()));
             }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
             if (instance.updateTotal()) {
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 StatisticalFolder.getInstance().setLandMarks(instance.getLandmarks());
                 String jsonString = gson.toJson(CrashReport.getInstance());
-                try (FileWriter writer = new FileWriter("src/main/java/bgu/spl/mics/application/error_output.json")) {
+                try (FileWriter writer = new FileWriter(new File(filePath.getParent(),"error_output.json"))) {
                     gson.toJson(CrashReport.getInstance(), writer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                terminate();
-                sendBroadcast(new TerminatedBroadcast(this.getClass()));
             }
         });
+    }
 
-        //System.out.println(getName() + " initialized.");
+    public String getOutputFilePath(String inputFilePath, String outputFileName) {
+        File inputFile = new File(inputFilePath);
+        return new File(inputFile.getParent(), outputFileName).getPath();
     }
 }
