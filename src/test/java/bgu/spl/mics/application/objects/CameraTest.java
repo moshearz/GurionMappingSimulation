@@ -52,12 +52,8 @@ class CameraTest {
         assertEquals(STATUS.DOWN, camera.getStatus(), "Camera status should be updated to DOWN");
     }
 
-    @Test
-    void getDetectedObjectsList() {
-        assertEquals(2, camera.getDetectedObjectsList().size(), "DetectedObjectsList should contain 2 entries");
-        assertEquals(1, camera.getDetectedObjectsList().get(0).getTime(), "First entry should have timestamp 1");
-        assertEquals(3, camera.getDetectedObjectsList().get(1).getTime(), "Second entry should have timestamp 3");
-    }
+
+
 
     @Test
     void getStampedDetectedObjects_ValidTick() {

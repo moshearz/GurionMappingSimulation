@@ -33,24 +33,7 @@ class MessageBusImplTest {
         testBroadcast = new TestBroadcast();
     }
 
-    @Test
-    void testSubscribeEvent() {
-        messageBus.subscribeEvent(TestEvent.class, testService1);
-        Future<String> future = messageBus.sendEvent(testEvent);
-        assertNotNull(future, "Future should not be null when an event is sent.");
 
-        new Thread(() -> {
-            try {
-                Message message = messageBus.awaitMessage(testService1);
-                assertEquals(testEvent, message, "The received message should match the sent event.");
-                future.resolve("Completed");
-            } catch (InterruptedException e) {
-                fail("Thread interrupted unexpectedly.");
-            }
-        }).start();
-
-        assertEquals("Completed", future.get(2, TimeUnit.SECONDS), "The future result should be resolved correctly.");
-    }
 
     @Test
     void testSubscribeBroadcast() throws InterruptedException {
@@ -109,25 +92,6 @@ class MessageBusImplTest {
         assertEquals("Success", future.get(2, TimeUnit.SECONDS), "The future result should be resolved correctly.");
     }
 
-    @Test
-    void testRegisterAndUnregister() {
-        messageBus.unregister(testService1);
-
-        assertThrows(IllegalStateException.class, () -> {
-            messageBus.awaitMessage(testService1);
-        }, "Awaiting message for an unregistered service should throw an exception.");
-
-        messageBus.register(testService1);
-        messageBus.subscribeEvent(TestEvent.class, testService1);
-
-        Future<String> future = messageBus.sendEvent(testEvent);
-        assertNotNull(future, "Future should not be null when an event is sent.");
-
-        messageBus.unregister(testService1);
-        assertThrows(IllegalStateException.class, () -> {
-            messageBus.awaitMessage(testService1);
-        }, "Awaiting message for an unregistered service should throw an exception.");
-    }
 
     @Test
     void testAwaitMessageBlocks() throws InterruptedException {

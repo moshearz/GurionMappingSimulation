@@ -58,4 +58,8 @@ public class Camera {
     public boolean isEmpty() {
         return detectedObjectsList.isEmpty();
     }
+
+    public int getFrequency() { return frequency; }
+
+    public StampedDetectedObjects getDetectedObjectsList() { return lastDetectedObjects; }
 }
