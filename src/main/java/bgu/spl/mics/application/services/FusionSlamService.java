@@ -1,18 +1,13 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.objects.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -53,6 +48,8 @@ public class FusionSlamService extends MicroService {
 
         subscribeBroadcast(TerminatedBroadcast.class, termination -> {
             if (instance.updateTotal()) {
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 StatisticalFolder.getInstance().setLandMarks(instance.getLandmarks());
                 String jsonString = gson.toJson(StatisticalFolder.getInstance());
@@ -61,13 +58,13 @@ public class FusionSlamService extends MicroService {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                terminate();
-                sendBroadcast(new TerminatedBroadcast(this.getClass()));
             }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
             if (instance.updateTotal()) {
+                terminate();
+                sendBroadcast(new TerminatedBroadcast(this.getClass()));
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 StatisticalFolder.getInstance().setLandMarks(instance.getLandmarks());
                 String jsonString = gson.toJson(CrashReport.getInstance());
@@ -76,11 +73,7 @@ public class FusionSlamService extends MicroService {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                terminate();
-                sendBroadcast(new TerminatedBroadcast(this.getClass()));
             }
         });
-
-        //System.out.println(getName() + " initialized.");
     }
 }

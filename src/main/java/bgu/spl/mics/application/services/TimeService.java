@@ -62,7 +62,5 @@ public class TimeService extends MicroService {
         });
         tickWait();
         sendBroadcast(new TickBroadcast(1));
-
-        //System.out.println(getName() + " initialized.");
     }
 }

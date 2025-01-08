@@ -1,8 +1,6 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
-
 import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.messages.TrackedObjectsEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
@@ -10,11 +8,8 @@ import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
 import com.google.gson.reflect.TypeToken;
-
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -46,7 +41,6 @@ public class LiDarService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, tick -> {
             List<TrackedObject> trackedObjectList = worker.readyTrackedList(tick.getTick());
-            System.out.println("tick: " + tick);
             while (trackedObjectList != null) {
                 StatisticalFolder.getInstance().updateTrackedObjectsTotal(trackedObjectList.size());
                 sendEvent(new TrackedObjectsEvent(trackedObjectList));

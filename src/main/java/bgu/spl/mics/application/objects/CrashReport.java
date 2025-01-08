@@ -1,14 +1,16 @@
 package bgu.spl.mics.application.objects;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CrashReport {
     private static CrashReport instance;
     private String errorMessage;
     private String faultySensor;
-    private Map<String, StampedDetectedObjects> lastCameraFrames;
-    private Map<String, List<TrackedObject>> lastLidarFrames;
+    private Map<String, StampedDetectedObjects> lastCameraFrames = new ConcurrentHashMap<>();
+    private Map<String, List<TrackedObject>> lastLidarFrames = new ConcurrentHashMap<>();
     private List<Pose> poses;
     private StatisticalFolder statistics = StatisticalFolder.getInstance();
 

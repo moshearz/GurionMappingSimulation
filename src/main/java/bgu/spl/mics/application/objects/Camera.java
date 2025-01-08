@@ -1,6 +1,8 @@
 package bgu.spl.mics.application.objects;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a camera sensor on the robot.
@@ -21,22 +23,30 @@ public class Camera {
         this.detectedObjectsList = detectedObjectsList;
     }
 
-    public int getId() {return id;}
-
-    public int getFrequency() {return frequency;}
-
     public STATUS getStatus() { return status; }
+
+    public int getId() {
+        return id;
+    }
 
     public StampedDetectedObjects getLastDetectedObjects() {
         return lastDetectedObjects;
     }
 
-    public List<StampedDetectedObjects> getDetectedObjectsList() { return detectedObjectsList; }
-
     public StampedDetectedObjects getStampedDetectedObjects(int tick) {
         try {
             if (detectedObjectsList.get(0).getTime() + frequency <= tick) {
-                lastDetectedObjects = detectedObjectsList.remove(0);
+                StampedDetectedObjects temp = detectedObjectsList.remove(0);
+                for (DetectedObject detectedObject : temp.getDetectedObjects()) {
+                    if (Objects.equals(detectedObject.getId(), "ERROR")) {
+                        CrashReport.getInstance().addLastCameraFrame("Camera " + id, lastDetectedObjects);
+                        status = STATUS.ERROR;
+                        List<DetectedObject> badMessage = new ArrayList<>();
+                        badMessage.add(detectedObject);
+                        return new StampedDetectedObjects(0, badMessage);
+                    }
+                }
+                lastDetectedObjects = temp;
                 return lastDetectedObjects;
             }
         } catch (IndexOutOfBoundsException ignored) {}
@@ -45,7 +55,7 @@ public class Camera {
 
     public void setStatus(STATUS status) { this.status = status; }
 
-    public Boolean isEmpty() {
+    public boolean isEmpty() {
         return detectedObjectsList.isEmpty();
     }
 }

@@ -89,13 +89,27 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		try { // Test case if at least one microService has subscribed to broadcast type b
-			synchronized (broadcastSubscriptions.get(b.getClass())) {
-				for (MicroService subscriber : broadcastSubscriptions.get(b.getClass())) {
-					queues.get(subscriber).add(b);
+		List<MicroService> subscribers = broadcastSubscriptions.get(b.getClass());
+		if (subscribers != null && !subscribers.isEmpty()) {
+			for (MicroService subscriber : subscribers) {
+				BlockingQueue<Message> queue = queues.get(subscriber);
+				if (queue != null) {
+					queue.add(b);
 				}
 			}
-		} catch (NoSuchElementException ignored) {}
+		}
+
+
+
+
+
+//		try { // Test case if at least one microService has subscribed to broadcast type b
+//			synchronized (broadcastSubscriptions.get(b.getClass())) {
+//				for (MicroService subscriber : broadcastSubscriptions.get(b.getClass())) {
+//					queues.get(subscriber).add(b);
+//				}
+//			}
+//		} catch (NoSuchElementException ignored) {}
 	}
 
 
